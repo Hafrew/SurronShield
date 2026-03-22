@@ -5,11 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="apple-mobile-web-app-title" content="CycleGuard" />
+  <meta name="apple-mobile-web-app-title" content="SurronShield" />
   <meta name="theme-color" content="#0a0a0f" />
-  <title>CycleGuard</title>
-
-  <!-- TensorFlow.js + COCO-SSD -->
+  <title>SurronShield</title>
+  <!-- Darren was here. -->
+  <!-- use tensor flow and cococ for the project. we are bassically making the camera system that detects cars, used on bikes. TensorFlow.js + COCO-SSD -->
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
 
@@ -39,7 +39,7 @@
       touch-action: none;
     }
 
-    /* ── CAMERA ── */
+    /* ── ashish cam ── */
     #video {
       position: fixed;
       inset: 0;
@@ -51,7 +51,7 @@
     }
     #video.live { opacity: 1; }
 
-    /* ── CANVAS OVERLAY ── */
+    /* ── CANVAs ── */
     #canvas {
       position: fixed;
       inset: 0;
@@ -60,8 +60,8 @@
       pointer-events: none;
     }
 
-    /* ── ZONE VIGNETTE ── */
-    #vignette {
+    /* ── vinjet ── */
+    #vinjete {
       position: fixed;
       inset: 0;
       z-index: 2;
@@ -71,12 +71,12 @@
         var(--overlay-glow) 100%);
       transition: background 0.25s ease, box-shadow 0.25s ease;
     }
-    #vignette.danger {
+    #vinjete.danger {
       box-shadow: inset 0 0 120px rgba(255,45,85,0.45);
       background: radial-gradient(ellipse at center, transparent 30%, rgba(255,45,85,0.12) 100%);
       animation: pulse-danger 0.6s ease-in-out infinite alternate;
     }
-    #vignette.medium {
+    #vinjete.medium {
       box-shadow: inset 0 0 80px rgba(255,184,0,0.25);
       background: radial-gradient(ellipse at center, transparent 35%, rgba(255,184,0,0.08) 100%);
     }
@@ -85,7 +85,7 @@
       to   { opacity: 1; }
     }
 
-    /* ── SCANLINE TEXTURE ── */
+    /* ── cool texture to make it look EVEN COOLER ── */
     #scanlines {
       position: fixed;
       inset: 0;
@@ -133,7 +133,7 @@
       font-family: 'Rajdhani', sans-serif;
     }
 
-    /* ── LOADING SCREEN ── */
+    /* ── loading screen for cool ass effects ── */
     #loading {
       position: fixed;
       inset: 0;
@@ -203,7 +203,7 @@
       transition: width 0.4s ease;
     }
 
-    /* ── HUD CORNERS ── */
+    /* ── Make the ui look cooler.  ── */
     .hud-corner {
       position: fixed;
       z-index: 8;
@@ -216,7 +216,7 @@
     .hud-corner.bl { bottom: calc(env(safe-area-inset-bottom,0px) + 80px); left: 14px; border-width: 0 0 2px 2px; }
     .hud-corner.br { bottom: calc(env(safe-area-inset-bottom,0px) + 80px); right: 14px; border-width: 0 2px 2px 0; }
 
-    /* ── BOTTOM STATS BAR ── */
+    /* ── stats bar, bottom of the screen ── */
     #stats-bar {
       position: fixed;
       bottom: 0;
@@ -249,12 +249,12 @@
     }
 
     /* ── CAR COUNT BADGE ── */
-    #car-count-wrap {
+    #numberofcars-wrap {
       display: flex;
       flex-direction: column;
       align-items: center;
     }
-    #car-count {
+    #numberofcars {
       font-size: 36px;
       font-weight: 700;
       color: var(--zone-color);
@@ -263,8 +263,8 @@
       line-height: 1;
     }
 
-    /* ── MUTE BUTTON ── */
-    #mute-btn {
+    /* ── Rohan mode. BUTTON ── */
+    #RohanModeButton {
       position: fixed;
       top: calc(env(safe-area-inset-top, 0px) + 14px);
       right: 16px;
@@ -279,9 +279,9 @@
       display: flex; align-items: center; justify-content: center;
       backdrop-filter: blur(8px);
     }
-    #mute-btn.muted { color: rgba(255,45,85,0.7); border-color: rgba(255,45,85,0.3); }
+    #RohanModeButton.muted { color: rgba(255,45,85,0.7); border-color: rgba(255,45,85,0.3); }
 
-    /* ── NO CAR STATE ── */
+    /* ── What happens when theres no cars? Glad u asked bruh ── */
     #no-car-msg {
       position: fixed;
       bottom: 100px;
@@ -297,12 +297,12 @@
     }
     #no-car-msg.hidden { opacity: 0; }
 
-    /* ── CAMERA MIRROR (REAR MODE) ── */
+    /* ── invert the cam so that you can still process info correctly when it is morrored ── */
     #video.mirrored { transform: scaleX(-1); }
     #canvas.mirrored { transform: scaleX(-1); }
 
-    /* ── MODE TOGGLE ── */
-    #mode-btn {
+    /* ── toggle between buttons and modes ── */
+    #mode-button {
       position: fixed;
       top: calc(env(safe-area-inset-top, 0px) + 14px);
       left: 16px;
@@ -324,15 +324,15 @@
       backdrop-filter: blur(8px);
       transition: border-color 0.2s, color 0.2s;
     }
-    #mode-btn .mode-icon { font-size: 15px; line-height: 1; }
-    #mode-btn .mode-text { font-size: 9px; letter-spacing: 0.15em; }
-    #mode-btn.rear {
+    #mode-button .mode-icon { font-size: 15px; line-height: 1; }
+    #mode-button .mode-text { font-size: 9px; letter-spacing: 0.15em; }
+    #mode-button.rear {
       border-color: rgba(255,184,0,0.5);
       color: #ffb800;
       text-shadow: 0 0 8px rgba(255,184,0,0.6);
     }
 
-    /* ── REAR MODE BADGE ── */
+    /* ── shows the rear mode badge ── */
     #rear-badge {
       position: fixed;
       top: calc(env(safe-area-inset-top, 0px) + 60px);
@@ -348,7 +348,7 @@
     }
     #rear-badge.show { display: block; }
 
-    /* ── PERMISSION ERROR ── */
+    /* ── almost forgetted ts ── */
     #perm-error {
       position: fixed;
       inset: 0;
@@ -365,7 +365,7 @@
     #perm-error.show { display: flex; }
     #perm-error p { color: var(--col-dim); font-size: 15px; line-height: 1.6; }
     #perm-error strong { color: var(--col-danger); font-size: 18px; display: block; margin-bottom: 4px; }
-    #retry-btn {
+    #retry-button {
       background: none;
       border: 1px solid var(--col-safe);
       color: var(--col-safe);
@@ -377,39 +377,39 @@
       cursor: pointer;
       border-radius: 4px;
     }
-  </style>
+</style>
 </head>
 <body>
 
-<!-- LOADING -->
+<!-- load -->
 <div id="loading">
-  <div class="logo">
+    <div class="logo">
     <div class="logo-icon">
-      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
-        <path d="M12 1L9 6h6L12 1zm0 22l3-5H9l3 5z" opacity="0.5"/>
-      </svg>
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+    <path d="M12 1L9 6h6L12 1zm0 22l3-5H9l3 5z" opacity="0.5"/>
+    </svg>
     </div>
-    <div class="logo-name">Reflex</div>
-    <div class="logo-tagline">E-bike safety project capstone</div>
-  </div>
-  <div id="load-status">load…</div>
-  <div class="load-bar-wrap"><div class="load-bar" id="load-bar"></div></div>
+    <div class="logo-name">Surron Shield</div>
+    <div class="logo-tagline">Stay safe out there</div>
+    </div>
+    <div id="load-status">loading (no, this is not just for show)</div>
+   <div class="load-bar-wrap"><div class="load-bar" id="load-bar"></div></div>
 </div>
 
 <!-- PERMISSION ERROR -->
 <div id="perm-error">
-  <strong>Camera Access Required</strong>
-  <p>CycleGuard needs your camera to detect vehicles. Please allow camera access in your browser settings and try again.</p>
-  <button id="retry-btn" onclick="location.reload()">RETRY</button>
+  <strong>I need ur camera...</strong>
+  <p>Surron Sheild needs your camera to detect vehicles. Please allow camera access in your browser settings and try again.</p>
+  <button id="retry-button" onclick="location.reload()">RETRY</button>
 </div>
 
 <!-- CAMERA -->
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 
-<!-- VIGNETTE & SCANLINES -->
-<div id="vignette"></div>
+<!-- vinjete & SCANLINES -->
+<div id="vinjete"></div>
 <div id="scanlines"></div>
 
 <!-- HUD CORNERS -->
@@ -419,13 +419,13 @@
 <div class="hud-corner br"></div>
 
 <!-- MODE TOGGLE -->
-<button id="mode-btn" title="Switch camera mode">
+<button id="mode-button" title="Switch camera mode">
   <span class="mode-icon">🔭</span>
   <span class="mode-text" id="mode-text">FRONT</span>
 </button>
 
 <!-- MUTE BUTTON -->
-<button id="mute-btn" title="Toggle sound">🔊</button>
+<button id="RohanModeButton" title="Toggle sound">🔊</button>
 
 <!-- REAR MODE BADGE -->
 <div id="rear-badge" id="rear-badge">◀ REAR VIEW — SMART MIRROR</div>
@@ -439,16 +439,16 @@
 <!-- STATS BAR -->
 <div id="stats-bar">
   <div class="stat-block">
-    <span class="stat-val" id="fps-val">--</span>
-    <span class="stat-label">FPS</span>
+  <span class="stat-val" id="fps-val">--</span>
+  <span class="stat-label">FPS</span>
   </div>
-  <div id="car-count-wrap" class="stat-block">
-    <span id="car-count">0</span>
-    <span class="stat-label">VEHICLES</span>
+  <div id="numberofcars-wrap" class="stat-block">
+  <span id="numberofcars">0</span>
+  <span class="stat-label">VEHICLES</span>
   </div>
   <div class="stat-block">
-    <span class="stat-val" id="model-val">COCO</span>
-    <span class="stat-label">MODEL</span>
+  <span class="stat-val" id="model-val">COCO</span>
+  <span class="stat-label">MODEL</span>
   </div>
 </div>
 
@@ -486,14 +486,14 @@ const video    = document.getElementById('video');
 const canvas   = document.getElementById('canvas');
 const ctx      = canvas.getContext('2d');
 const zoneVal  = document.getElementById('zone-value');
-const carCount = document.getElementById('car-count');
+const carCount = document.getElementById('numberofcars');
 const fpsEl    = document.getElementById('fps-val');
-const vigEl    = document.getElementById('vignette');
+const vigEl    = document.getElementById('vinjete');
 const loadEl   = document.getElementById('loading');
 const loadBar  = document.getElementById('load-bar');
 const loadSt   = document.getElementById('load-status');
-const muteBtn  = document.getElementById('mute-btn');
-const modeBtn  = document.getElementById('mode-btn');
+const mutebutton  = document.getElementById('RohanModeButton');
+const modebutton  = document.getElementById('mode-button');
 const modeText = document.getElementById('mode-text');
 const rearBadge= document.getElementById('rear-badge');
 const noCarMsg = document.getElementById('no-car-msg');
@@ -519,26 +519,26 @@ function beep(zone) {
   if (now - lastAudioTime < interval) return;
   lastAudioTime = now;
   try {
-    const ac = getAudioCtx();
-    const osc = ac.createOscillator();
-    const gain = ac.createGain();
-    osc.connect(gain); gain.connect(ac.destination);
-    if (zone === 'CLOSE') {
-      osc.frequency.value = 880;
-      gain.gain.setValueAtTime(0.4, ac.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.18);
-      osc.start(); osc.stop(ac.currentTime + 0.18);
-    } else if (zone === 'MEDIUM') {
-      osc.frequency.value = 520;
-      gain.gain.setValueAtTime(0.2, ac.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.25);
-      osc.start(); osc.stop(ac.currentTime + 0.25);
-    } else if (zone === 'FAR') {
-      osc.frequency.value = 330;
-      gain.gain.setValueAtTime(0.1, ac.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.3);
-      osc.start(); osc.stop(ac.currentTime + 0.3);
-    }
+  const ac = getAudioCtx();
+  const osc = ac.createOscillator();
+  const gain = ac.createGain();
+  osc.connect(gain); gain.connect(ac.destination);
+  if (zone === 'CLOSE') {
+  osc.frequency.value = 880;
+  gain.gain.setValueAtTime(0.4, ac.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.18);
+  osc.start(); osc.stop(ac.currentTime + 0.18);
+  } else if (zone === 'MEDIUM') {
+  osc.frequency.value = 520;
+  gain.gain.setValueAtTime(0.2, ac.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.25);
+  osc.start(); osc.stop(ac.currentTime + 0.25);
+  } else if (zone === 'FAR') {
+  osc.frequency.value = 330;
+  gain.gain.setValueAtTime(0.1, ac.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.3);
+  osc.start(); osc.stop(ac.currentTime + 0.3);
+  }
   } catch(e) {}
 }
 
@@ -550,7 +550,7 @@ function calcZone(bbox, frameW, frameH) {
   return 'FAR';
 }
 
-// ── UI UPDATE ───────────────────────────────────────────
+// ── Uopdate the ui] ───────────────────────────────────────────
 function setZone(zone) {
   if (zone === currentZone) return;
   currentZone = zone;
@@ -638,27 +638,27 @@ function drawDetections(dets, W, H) {
 
 // ── DETECTION LOOP ──────────────────────────────────────
 async function detect() {
-  const now = performance.now();
+const now = performance.now();
 
-  // FPS
-  fpsFrames++;
-  if (now - fpsLast >= 1000) {
-    fpsVal = fpsFrames;
-    fpsEl.textContent = fpsFrames;
-    fpsFrames = 0;
-    fpsLast = now;
+// FPS
+fpsFrames++;
+if (now - fpsLast >= 1000) {
+fpsVal = fpsFrames;
+fpsEl.textContent = fpsFrames;
+fpsFrames = 0;
+fpsLast = now;
   }
 
-  const W = canvas.width;
-  const H = canvas.height;
+const W = canvas.width;
+const H = canvas.height;
 
-  // Run model throttled
-  if (now - lastDetectTime >= DETECTION_INTERVAL_MS && model && video.readyState === 4) {
-    lastDetectTime = now;
-    try {
-      const raw = await model.detect(video);
-      detections = raw.filter(d => VEHICLE_CLASSES.includes(d.class) && d.score > 0.45);
-    } catch(e) {}
+  // cococooocococcocococococo
+if (now - lastDetectTime >= DETECTION_INTERVAL_MS && model && video.readyState === 4) {
+lastDetectTime = now;
+try {
+const raw = await model.detect(video);
+detections = raw.filter(d => VEHICLE_CLASSES.includes(d.class) && d.score > 0.45);
+} catch(e) {}
   }
 
   // Find worst zone
@@ -683,7 +683,7 @@ async function detect() {
   animId = requestAnimationFrame(detect);
 }
 
-// ── RESIZE ──────────────────────────────────────────────
+// ── one size fits all ──────────────────────────────────────────────
 function resize() {
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -691,9 +691,9 @@ function resize() {
 window.addEventListener('resize', resize);
 resize();
 
-// ── SWITCH CAMERA ────────────────────────────────────────
+// ── Switch cam ────────────────────────────────────────
 async function switchCamera() {
-  modeBtn.disabled = true;
+  modebutton.disabled = true;
   rearMode = !rearMode;
 
   // Stop existing stream
@@ -713,17 +713,17 @@ async function switchCamera() {
 
   // Update UI
   if (rearMode) {
-    modeBtn.classList.add('rear');
+    modebutton.classList.add('rear');
     modeText.textContent = 'REAR';
-    modeBtn.querySelector('.mode-icon').textContent = '🪞';
+    modebutton.querySelector('.mode-icon').textContent = '🪞';
     document.getElementById('zone-label').textContent = 'REAR TRAFFIC';
     rearBadge.classList.add('show');
     video.classList.add('mirrored');
     canvas.classList.add('mirrored');
   } else {
-    modeBtn.classList.remove('rear');
+    modebutton.classList.remove('rear');
     modeText.textContent = 'FRONT';
-    modeBtn.querySelector('.mode-icon').textContent = '🔭';
+    modebutton.querySelector('.mode-icon').textContent = '🔭';
     document.getElementById('zone-label').textContent = 'NEAREST VEHICLE';
     rearBadge.classList.remove('show');
     video.classList.remove('mirrored');
@@ -744,16 +744,16 @@ async function switchCamera() {
     console.warn('Camera switch failed', e);
   }
 
-  modeBtn.disabled = false;
+  modebutton.disabled = false;
 }
 
-modeBtn.addEventListener('click', switchCamera);
+modebutton.addEventListener('click', switchCamera);
 
-// ── MUTE ────────────────────────────────────────────────
-muteBtn.addEventListener('click', () => {
+// ── Rohan. ────────────────────────────────────────────────
+mutebutton.addEventListener('click', () => {
   muted = !muted;
-  muteBtn.textContent = muted ? '🔇' : '🔊';
-  muteBtn.className = muted ? 'muted' : '';
+  mutebutton.textContent = muted ? '🔇' : '🔊';
+  mutebutton.className = muted ? 'muted' : '';
   // Unlock audio context on first interaction
   if (!muted) getAudioCtx();
 });
@@ -761,7 +761,7 @@ muteBtn.addEventListener('click', () => {
 // ── INIT ────────────────────────────────────────────────
 async function init() {
   // Step 1: Camera
-  loadSt.textContent = 'REQUESTING CAMERA…';
+  loadSt.textContent = 'request CAMERA…';
   loadBar.style.width = '15%';
   let stream;
   try {
