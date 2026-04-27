@@ -52,68 +52,174 @@
   <div class="scanline-layer"></div>
 
   <header class="topbar">
-    <div class="pill pill--brand">
-      <span class="pill__label">SurronShield</span>
-      <strong class="pill__value" id="camera-mode-label">Front watch</strong>
+    <div class="brand-chip">
+      <span class="brand-chip__label">SurronShield</span>
+      <strong class="brand-chip__value" id="camera-mode-label">Front watch</strong>
     </div>
-    <div class="pill pill--status">
-      <span class="pill__label">Engine</span>
-      <strong class="pill__value" id="backend-value">Starting</strong>
+    <div class="topbar__cluster">
+      <div class="pill pill--status">
+        <span class="pill__label">Engine</span>
+        <strong class="pill__value" id="backend-value">Starting</strong>
+      </div>
+      <button id="settings-button" class="action-chip action-chip--icon" type="button">
+        <span class="action-chip__label">Tune</span>
+        <strong class="action-chip__value">Zones</strong>
+      </button>
     </div>
   </header>
 
+  <section class="action-rail">
+    <div class="mode-switch" role="group" aria-label="Camera mode">
+      <button id="front-mode-button" class="mode-switch__button" type="button">Front</button>
+      <button id="rear-mode-button" class="mode-switch__button" type="button">Rear</button>
+    </div>
+    <button id="sound-button" class="action-chip" type="button">
+      <span class="action-chip__label">Audio</span>
+      <strong class="action-chip__value" id="sound-button-value">On</strong>
+    </button>
+    <button id="haptics-button" class="action-chip" type="button">
+      <span class="action-chip__label">Haptics</span>
+      <strong class="action-chip__value" id="haptics-button-value">On</strong>
+    </button>
+  </section>
+
   <main class="hud">
     <section class="hero-card">
-      <p class="hero-card__eyebrow" id="zone-context">Traffic ahead</p>
+      <div class="hero-card__meta">
+        <p class="hero-card__eyebrow" id="zone-context">Traffic ahead</p>
+        <div class="hero-card__distance" id="hero-distance">--</div>
+      </div>
       <h1 class="hero-card__zone" id="zone-value">CLEAR</h1>
       <p class="hero-card__detail" id="threat-detail">No vehicles in the lane.</p>
       <div class="risk-meter" aria-hidden="true">
         <div class="risk-meter__fill" id="risk-fill"></div>
       </div>
+      <p class="hero-card__footer" id="hero-thresholds">Warning under --. Danger under --.</p>
     </section>
 
     <div class="rear-banner" id="rear-banner" hidden>Rear mirror mode active</div>
   </main>
 
-  <footer class="bottom-dock">
-    <section class="stats-grid">
-      <article class="stat-card">
-        <span class="stat-card__label">Vehicles</span>
-        <strong class="stat-card__value" id="vehicle-count">0</strong>
+  <aside class="telemetry-panel">
+    <article class="telemetry-card">
+      <span class="telemetry-card__label">Distance</span>
+      <strong class="telemetry-card__value" id="distance-value">--</strong>
+    </article>
+    <article class="telemetry-card">
+      <span class="telemetry-card__label">Vehicles</span>
+      <strong class="telemetry-card__value" id="vehicle-count">0</strong>
+    </article>
+    <article class="telemetry-card">
+      <span class="telemetry-card__label">FPS</span>
+      <strong class="telemetry-card__value" id="fps-value">--</strong>
+    </article>
+    <article class="telemetry-card">
+      <span class="telemetry-card__label">Latency</span>
+      <strong class="telemetry-card__value" id="latency-value">--</strong>
+    </article>
+  </aside>
+
+  <p class="status-message" id="status-message">
+    Scanning for road traffic around the bike.
+  </p>
+
+  <div id="settings-scrim" class="settings-scrim" hidden></div>
+  <section id="settings-page" class="settings-page" hidden aria-label="Distance settings">
+    <div class="settings-page__handle"></div>
+    <header class="settings-page__header">
+      <div>
+        <p class="settings-page__eyebrow">Settings</p>
+        <h2>Distance zones</h2>
+      </div>
+      <button id="settings-close-button" class="action-chip action-chip--icon" type="button">
+        <span class="action-chip__label">Close</span>
+        <strong class="action-chip__value">Done</strong>
+      </button>
+    </header>
+
+    <section class="settings-summary">
+      <article class="settings-summary__card">
+        <span class="settings-summary__label">Current mode</span>
+        <strong class="settings-summary__value" id="settings-current-mode">Front</strong>
       </article>
-      <article class="stat-card">
-        <span class="stat-card__label">FPS</span>
-        <strong class="stat-card__value" id="fps-value">--</strong>
+      <article class="settings-summary__card">
+        <span class="settings-summary__label">Model</span>
+        <strong class="settings-summary__value settings-summary__value--small" id="settings-model-value">Loading</strong>
       </article>
-      <article class="stat-card">
-        <span class="stat-card__label">Latency</span>
-        <strong class="stat-card__value" id="latency-value">--</strong>
-      </article>
-      <article class="stat-card">
-        <span class="stat-card__label">Model</span>
-        <strong class="stat-card__value stat-card__value--small" id="model-value">Loading</strong>
+      <article class="settings-summary__card">
+        <span class="settings-summary__label">Engine</span>
+        <strong class="settings-summary__value" id="settings-backend-value">--</strong>
       </article>
     </section>
 
-    <section class="controls-row">
-      <button id="mode-button" class="control-button" type="button">
-        <span class="control-button__label">Camera</span>
-        <strong class="control-button__value" id="mode-button-value">Front</strong>
-      </button>
-      <button id="sound-button" class="control-button" type="button">
-        <span class="control-button__label">Audio</span>
-        <strong class="control-button__value" id="sound-button-value">On</strong>
-      </button>
-      <button id="haptics-button" class="control-button" type="button">
-        <span class="control-button__label">Haptics</span>
-        <strong class="control-button__value" id="haptics-button-value">On</strong>
-      </button>
+    <section class="settings-section">
+      <div class="settings-section__header">
+        <div>
+          <h3>Front camera zones</h3>
+          <p>For traffic ahead of the bike.</p>
+        </div>
+      </div>
+      <label class="settings-control" for="front-danger-slider">
+        <div class="settings-control__row">
+          <span>Danger distance</span>
+          <strong id="front-danger-display">--</strong>
+        </div>
+        <input id="front-danger-slider" type="range" min="1.5" max="25" step="0.5" />
+      </label>
+      <label class="settings-control" for="front-warning-slider">
+        <div class="settings-control__row">
+          <span>Warning distance</span>
+          <strong id="front-warning-display">--</strong>
+        </div>
+        <input id="front-warning-slider" type="range" min="3" max="40" step="0.5" />
+      </label>
+      <p class="settings-hint" id="front-zone-hint"></p>
     </section>
 
-    <p class="status-message" id="status-message">
-      Scanning for road traffic around the bike.
-    </p>
-  </footer>
+    <section class="settings-section">
+      <div class="settings-section__header">
+        <div>
+          <h3>Rear camera zones</h3>
+          <p>For rear mirror mode and traffic behind you.</p>
+        </div>
+      </div>
+      <label class="settings-control" for="rear-danger-slider">
+        <div class="settings-control__row">
+          <span>Danger distance</span>
+          <strong id="rear-danger-display">--</strong>
+        </div>
+        <input id="rear-danger-slider" type="range" min="1.5" max="25" step="0.5" />
+      </label>
+      <label class="settings-control" for="rear-warning-slider">
+        <div class="settings-control__row">
+          <span>Warning distance</span>
+          <strong id="rear-warning-display">--</strong>
+        </div>
+        <input id="rear-warning-slider" type="range" min="3" max="40" step="0.5" />
+      </label>
+      <p class="settings-hint" id="rear-zone-hint"></p>
+    </section>
+
+    <section class="settings-section">
+      <div class="settings-section__header">
+        <div>
+          <h3>Car length conversion</h3>
+          <p>Used to show meter values as car lengths.</p>
+        </div>
+      </div>
+      <label class="settings-control" for="car-length-slider">
+        <div class="settings-control__row">
+          <span>Average car length</span>
+          <strong id="car-length-display">--</strong>
+        </div>
+        <input id="car-length-slider" type="range" min="3.5" max="5.5" step="0.1" />
+      </label>
+      <p class="settings-hint">
+        These distances are approximate. SurronShield estimates range from the phone camera
+        and the size of the detected vehicle box.
+      </p>
+    </section>
+  </section>
 
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>

@@ -1,13 +1,16 @@
 import {
   DETECTION_LIMIT,
+  DISTANCE_ESTIMATION,
+  FALLBACK_RISK_PROFILES,
   INFERENCE,
   MODEL_BASE,
   MODEL_LABELS,
-  RISK_PROFILES,
   SCORE_THRESHOLD_BY_CLASS,
   TRACKING,
   VEHICLE_CLASSES,
+  VEHICLE_DIMENSIONS_METERS,
 } from "./config.js";
+import { DEFAULT_SETTINGS, metersToCarLengths, normalizeSettings } from "./preferences.js";
 
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
@@ -56,6 +59,7 @@ export class VehicleDetector {
     this.modelPromise = null;
     this.backend = "Pending";
     this.mode = "front";
+    this.settings = normalizeSettings(DEFAULT_SETTINGS);
     this.inferenceInFlight = false;
     this.nextInferenceAt = 0;
     this.avgInferenceMs = INFERENCE.startingIntervalMs;
@@ -80,7 +84,20 @@ export class VehicleDetector {
       inferenceSize: "--",
       modelLabel: this.modelLabel,
       backend: this.backend,
+      thresholds: this.getModeThresholds(),
     };
+  }
+
+  setSettings(settings) {
+    this.settings = normalizeSettings(settings);
+    this.snapshot = {
+      ...this.snapshot,
+      thresholds: this.getModeThresholds(),
+    };
+  }
+
+  getModeThresholds() {
+    return this.settings.distanceTuning[this.mode];
   }
 
   async configureBackend() {
@@ -166,7 +183,12 @@ export class VehicleDetector {
       void this.runInference();
     }
 
-    return this.snapshot;
+    return {
+      ...this.snapshot,
+      thresholds: this.getModeThresholds(),
+      modelLabel: this.modelLabel,
+      backend: this.backend,
+    };
   }
 
   shouldInfer(now) {
@@ -208,10 +230,18 @@ export class VehicleDetector {
       const predictions = await this.model.detect(this.workCanvas, DETECTION_LIMIT);
       const normalized = this.normalizeDetections(predictions, input);
       const tracked = this.trackDetections(normalized, performance.now())
-        .sort((a, b) => b.risk - a.risk)
+        .sort((a, b) => {
+          const aDistance = a.distanceMeters ?? Number.POSITIVE_INFINITY;
+          const bDistance = b.distanceMeters ?? Number.POSITIVE_INFINITY;
+          if (aDistance !== bDistance) {
+            return aDistance - bDistance;
+          }
+
+          return b.risk - a.risk;
+        })
         .slice(0, DETECTION_LIMIT);
 
-      const primary = tracked.find((item) => item.zone !== "CLEAR") ?? null;
+      const primary = tracked[0] ?? null;
       const zone = primary?.zone ?? "CLEAR";
       const latencyMs = Math.round(performance.now() - startedAt);
 
@@ -225,6 +255,7 @@ export class VehicleDetector {
         inferenceSize: `${input.targetWidth}x${input.targetHeight}`,
         modelLabel: this.modelLabel,
         backend: this.backend,
+        thresholds: this.getModeThresholds(),
       };
     } catch (error) {
       console.warn("Detection error", error);
@@ -348,18 +379,13 @@ export class VehicleDetector {
 
     this.tracks = [...updatedTracks, ...retainedTracks];
 
-    return this.tracks.map((track) => {
-      const metrics = this.computeMetrics(track);
-      return {
-        ...track,
-        ...metrics,
-      };
-    });
+    return this.tracks.map((track) => ({
+      ...track,
+      ...this.computeMetrics(track),
+    }));
   }
 
-  computeMetrics(track) {
-    const frameWidth = this.video.videoWidth || 1;
-    const frameHeight = this.video.videoHeight || 1;
+  getFallbackRisk(track, frameWidth, frameHeight) {
     const [x, y, width, height] = track.bbox;
     const areaRatio = (width * height) / (frameWidth * frameHeight);
     const bottomRatio = clamp((y + height) / frameHeight, 0, 1);
@@ -379,7 +405,7 @@ export class VehicleDetector {
       1,
     );
 
-    const thresholds = RISK_PROFILES[this.mode];
+    const thresholds = FALLBACK_RISK_PROFILES[this.mode];
     let zone = "CLEAR";
 
     if (risk >= thresholds.close) {
@@ -390,10 +416,96 @@ export class VehicleDetector {
       zone = "FAR";
     }
 
+    return { risk, zone, areaRatio, bottomRatio, centerBias };
+  }
+
+  getCameraFocalLengths(frameWidth, frameHeight) {
+    const horizontalFovRadians =
+      (this.settings.calibration.horizontalFovDegrees * Math.PI) / 180;
+    const focalLengthX = frameWidth / (2 * Math.tan(horizontalFovRadians / 2));
+    const verticalFovRadians =
+      2 * Math.atan((frameHeight / frameWidth) * Math.tan(horizontalFovRadians / 2));
+    const focalLengthY = frameHeight / (2 * Math.tan(verticalFovRadians / 2));
+
     return {
-      areaRatio,
-      bottomRatio,
-      centerBias,
+      focalLengthX,
+      focalLengthY,
+    };
+  }
+
+  estimateDistanceMeters(track, frameWidth, frameHeight) {
+    const dimensions = VEHICLE_DIMENSIONS_METERS[track.class] ?? VEHICLE_DIMENSIONS_METERS.car;
+    const { focalLengthX, focalLengthY } = this.getCameraFocalLengths(
+      frameWidth,
+      frameHeight,
+    );
+    const boxWidth = Math.max(track.bbox[2], 1);
+    const boxHeight = Math.max(track.bbox[3], 1);
+    const widthEstimate = (dimensions.width * focalLengthX) / boxWidth;
+    const heightEstimate = (dimensions.height * focalLengthY) / boxHeight;
+    const widthWeight =
+      track.class === "car" || track.class === "truck" || track.class === "bus"
+        ? 0.65
+        : 0.45;
+
+    const distanceMeters =
+      widthEstimate * widthWeight + heightEstimate * (1 - widthWeight);
+
+    return clamp(
+      distanceMeters,
+      DISTANCE_ESTIMATION.minDistanceMeters,
+      DISTANCE_ESTIMATION.maxDistanceMeters,
+    );
+  }
+
+  zoneFromDistance(distanceMeters) {
+    const thresholds = this.getModeThresholds();
+
+    if (distanceMeters <= thresholds.dangerMeters) {
+      return "CLOSE";
+    }
+
+    if (distanceMeters <= thresholds.warningMeters) {
+      return "MEDIUM";
+    }
+
+    return "FAR";
+  }
+
+  riskFromDistance(distanceMeters) {
+    const thresholds = this.getModeThresholds();
+
+    if (distanceMeters <= thresholds.dangerMeters) {
+      const intensity = 1 - distanceMeters / thresholds.dangerMeters;
+      return clamp(0.76 + intensity * 0.24, 0.76, 1);
+    }
+
+    if (distanceMeters <= thresholds.warningMeters) {
+      const span = Math.max(thresholds.warningMeters - thresholds.dangerMeters, 0.5);
+      const intensity = 1 - (distanceMeters - thresholds.dangerMeters) / span;
+      return clamp(0.42 + intensity * 0.3, 0.42, 0.75);
+    }
+
+    return clamp(0.14 + thresholds.warningMeters / (distanceMeters * 4), 0.14, 0.38);
+  }
+
+  computeMetrics(track) {
+    const frameWidth = this.video.videoWidth || 1;
+    const frameHeight = this.video.videoHeight || 1;
+    const fallback = this.getFallbackRisk(track, frameWidth, frameHeight);
+    const distanceMeters = this.estimateDistanceMeters(track, frameWidth, frameHeight);
+    const distanceCarLengths = metersToCarLengths(distanceMeters, this.settings);
+    const zone = Number.isFinite(distanceMeters)
+      ? this.zoneFromDistance(distanceMeters)
+      : fallback.zone;
+    const risk = Number.isFinite(distanceMeters)
+      ? this.riskFromDistance(distanceMeters)
+      : fallback.risk;
+
+    return {
+      ...fallback,
+      distanceMeters,
+      distanceCarLengths,
       risk,
       zone,
     };

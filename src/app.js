@@ -3,6 +3,13 @@ import { CameraController } from "./camera.js";
 import { VehicleDetector } from "./detector.js";
 import { FeedbackController } from "./feedback.js";
 import { OverlayRenderer } from "./overlay.js";
+import {
+  loadSettings,
+  saveSettings,
+  updateCalibrationSetting,
+  updateDistanceSetting,
+} from "./preferences.js";
+import { SettingsPanelController } from "./settings-panel.js";
 import { HudController } from "./ui.js";
 
 class SurronShieldApp {
@@ -10,19 +17,26 @@ class SurronShieldApp {
     this.video = document.getElementById("video");
     this.overlayCanvas = document.getElementById("overlay");
     this.retryButton = document.getElementById("retry-button");
-    this.modeButton = document.getElementById("mode-button");
+    this.frontModeButton = document.getElementById("front-mode-button");
+    this.rearModeButton = document.getElementById("rear-mode-button");
+    this.settingsButton = document.getElementById("settings-button");
     this.soundButton = document.getElementById("sound-button");
     this.hapticsButton = document.getElementById("haptics-button");
 
     this.ui = new HudController();
+    this.settingsPanel = new SettingsPanelController();
     this.camera = new CameraController(this.video);
     this.detector = new VehicleDetector(this.video);
     this.feedback = new FeedbackController();
     this.overlay = new OverlayRenderer(this.video, this.overlayCanvas);
 
-    this.mode = "front";
+    this.settings = loadSettings();
+    this.mode = this.settings.activeMode;
+    this.detector.setSettings(this.settings);
+
     this.running = false;
     this.switching = false;
+    this.settingsOpen = false;
     this.fpsFrames = 0;
     this.fpsLastAt = performance.now();
     this.fps = 0;
@@ -33,27 +47,11 @@ class SurronShieldApp {
       window.location.reload();
     });
 
-    this.modeButton.addEventListener("click", async () => {
-      if (this.switching) {
-        return;
-      }
-
-      this.switching = true;
-      this.ui.setLoading(72, "Switching camera...");
-
-      const nextMode = this.mode === "front" ? "rear" : "front";
-
-      try {
-        await this.camera.start(nextMode);
-        this.mode = nextMode;
-        this.applyModeState();
-        this.ui.hideLoading();
-      } catch (error) {
-        console.warn("Camera switch failed", error);
-        this.ui.hideLoading();
-      } finally {
-        this.switching = false;
-      }
+    this.frontModeButton.addEventListener("click", () => {
+      void this.switchMode("front");
+    });
+    this.rearModeButton.addEventListener("click", () => {
+      void this.switchMode("rear");
     });
 
     this.soundButton.addEventListener("click", async () => {
@@ -70,6 +68,24 @@ class SurronShieldApp {
       );
     });
 
+    this.settingsButton.addEventListener("click", () => {
+      this.setSettingsOpen(true);
+    });
+
+    this.settingsPanel.bind({
+      onClose: () => this.setSettingsOpen(false),
+      onThresholdChange: (mode, key, value) => {
+        this.settings = updateDistanceSetting(this.settings, mode, key, value);
+        saveSettings(this.settings);
+        this.applySettings();
+      },
+      onCarLengthChange: (key, value) => {
+        this.settings = updateCalibrationSetting(this.settings, key, value);
+        saveSettings(this.settings);
+        this.applySettings();
+      },
+    });
+
     document.addEventListener(
       "pointerdown",
       async () => {
@@ -77,6 +93,12 @@ class SurronShieldApp {
       },
       { once: true },
     );
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && this.settingsOpen) {
+        this.setSettingsOpen(false);
+      }
+    });
 
     window.addEventListener("resize", () => {
       this.overlay.resize();
@@ -87,6 +109,28 @@ class SurronShieldApp {
         this.feedback.lastZone = "CLEAR";
       }
     });
+  }
+
+  renderSettingsPanel(snapshot = this.detector.snapshot) {
+    this.settingsPanel.render(this.settings, {
+      mode: this.mode,
+      modelLabel: snapshot.modelLabel ?? this.detector.modelLabel,
+      backend: snapshot.backend ?? this.detector.backend,
+    });
+  }
+
+  setSettingsOpen(open) {
+    this.settingsOpen = open;
+    this.settingsPanel.setOpen(open);
+    this.ui.setSettingsOpen(open);
+    if (open) {
+      this.renderSettingsPanel(this.detector.snapshot);
+    }
+  }
+
+  applySettings() {
+    this.detector.setSettings(this.settings);
+    this.renderSettingsPanel(this.detector.snapshot);
   }
 
   applyModeState() {
@@ -109,6 +153,30 @@ class SurronShieldApp {
     return this.fps;
   }
 
+  async switchMode(nextMode) {
+    if (this.switching || nextMode === this.mode) {
+      return;
+    }
+
+    this.switching = true;
+    this.ui.setLoading(76, `Switching to ${CAMERA_MODES[nextMode].label}...`);
+
+    try {
+      await this.camera.start(nextMode);
+      this.mode = nextMode;
+      this.settings.activeMode = nextMode;
+      saveSettings(this.settings);
+      this.applyModeState();
+      this.renderSettingsPanel(this.detector.snapshot);
+      this.ui.hideLoading();
+    } catch (error) {
+      console.warn("Camera switch failed", error);
+      this.ui.hideLoading();
+    } finally {
+      this.switching = false;
+    }
+  }
+
   loop = (now) => {
     if (!this.running) {
       return;
@@ -122,17 +190,23 @@ class SurronShieldApp {
     });
     this.feedback.handleZone(snapshot.zone);
 
+    if (this.settingsOpen) {
+      this.renderSettingsPanel(snapshot);
+    }
+
     window.requestAnimationFrame(this.loop);
   };
 
   async init() {
     this.bindEvents();
     this.applyModeState();
+    this.applySettings();
     this.ui.setSoundEnabled(this.feedback.soundEnabled);
     this.ui.setHapticsEnabled(
       this.feedback.hapticsEnabled,
       this.feedback.supportsHaptics,
     );
+    this.ui.setSettingsOpen(false);
 
     this.ui.setLoading(18, "Preparing detector...");
     const modelTask = this.detector.loadModel();
@@ -157,6 +231,8 @@ class SurronShieldApp {
       this.ui.setLoading(100, "Model failed to load. Check connection.");
       return;
     }
+
+    this.renderSettingsPanel(this.detector.snapshot);
     this.ui.setLoading(100, "Ready to ride.");
     this.ui.hideLoading();
 

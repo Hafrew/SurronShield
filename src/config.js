@@ -17,13 +17,15 @@ export const CAMERA_MODES = {
     label: "Front watch",
     shortLabel: "Front",
     zoneLabel: "Traffic ahead",
+    directionLabel: "ahead",
     facingMode: "environment",
     mirrored: false,
   },
   rear: {
-    label: "Rear watch",
+    label: "Rear mirror",
     shortLabel: "Rear",
     zoneLabel: "Traffic behind",
+    directionLabel: "behind",
     facingMode: "user",
     mirrored: true,
   },
@@ -43,6 +45,14 @@ export const SCORE_THRESHOLD_BY_CLASS = {
   bus: 0.38,
   motorcycle: 0.42,
   bicycle: 0.46,
+};
+
+export const VEHICLE_DIMENSIONS_METERS = {
+  car: { width: 1.82, height: 1.47 },
+  truck: { width: 2.55, height: 3.2 },
+  bus: { width: 2.6, height: 3.15 },
+  motorcycle: { width: 0.82, height: 1.16 },
+  bicycle: { width: 0.62, height: 1.05 },
 };
 
 export const DETECTION_LIMIT = 8;
@@ -65,7 +75,13 @@ export const TRACKING = {
   minShortSidePx: 18,
 };
 
-export const RISK_PROFILES = {
+export const DISTANCE_ESTIMATION = {
+  horizontalFovDegreesDefault: 67,
+  minDistanceMeters: 1,
+  maxDistanceMeters: 60,
+};
+
+export const FALLBACK_RISK_PROFILES = {
   front: {
     far: 0.18,
     medium: 0.46,
@@ -86,12 +102,12 @@ export const ZONE_STYLES = {
   },
   FAR: {
     color: "#5ef2c4",
-    displayLabel: "WATCH",
+    displayLabel: "SAFE",
     boxColor: "#5ef2c4",
   },
   MEDIUM: {
     color: "#ffbe62",
-    displayLabel: "ALERT",
+    displayLabel: "WARNING",
     boxColor: "#ffbe62",
   },
   CLOSE: {

@@ -1,5 +1,21 @@
 import { CAMERA_MODES, ZONE_STYLES } from "./config.js";
 
+function formatMeters(value) {
+  if (!Number.isFinite(value)) {
+    return "--";
+  }
+
+  return value >= 10 ? `${value.toFixed(0)}m` : `${value.toFixed(1)}m`;
+}
+
+function formatCarLengths(value) {
+  if (!Number.isFinite(value)) {
+    return "--";
+  }
+
+  return `${value.toFixed(1)} cars`;
+}
+
 function formatLatency(latencyMs) {
   return latencyMs > 0 ? `${latencyMs}ms` : "--";
 }
@@ -12,34 +28,21 @@ function buildThreatDetail(snapshot, mode) {
   }
 
   const subject = snapshot.primary.label.toLowerCase();
-  const direction = mode === "rear" ? "behind you" : "ahead";
+  const direction = CAMERA_MODES[mode].directionLabel;
+  const meters = formatMeters(snapshot.primary.distanceMeters);
+  const carLengths = formatCarLengths(snapshot.primary.distanceCarLengths);
 
-  if (snapshot.primary.zone === "CLOSE") {
-    return `${subject} is closing ${direction}.`;
-  }
-
-  if (snapshot.primary.zone === "MEDIUM") {
-    return `${subject} is approaching ${direction}.`;
-  }
-
-  return `${subject} detected ${direction}.`;
+  return `${subject} ${direction} at about ${meters} (${carLengths}).`;
 }
 
-function buildStatusMessage(snapshot, mode) {
+function buildStatusMessage(snapshot, mode, thresholds) {
   if (!snapshot.primary) {
-    return mode === "rear"
-      ? "Rear mirror active. Scan centered behind the bike."
-      : "Road scan active. Keep the phone centered with the lane.";
+    return `Danger under ${formatMeters(thresholds.dangerMeters)}. Warning under ${formatMeters(thresholds.warningMeters)} in ${mode} mode.`;
   }
 
-  const distanceLabel =
-    snapshot.primary.zone === "CLOSE"
-      ? "Immediate warning"
-      : snapshot.primary.zone === "MEDIUM"
-        ? "Caution"
-        : "Heads up";
-
-  return `${distanceLabel}. ${snapshot.primary.label} confidence ${Math.round(snapshot.primary.score * 100)} percent.`;
+  const label = ZONE_STYLES[snapshot.zone]?.displayLabel ?? snapshot.zone;
+  const direction = CAMERA_MODES[mode].directionLabel;
+  return `${label}. ${snapshot.primary.label} ${direction} at about ${formatMeters(snapshot.primary.distanceMeters)}.`;
 }
 
 export class HudController {
@@ -51,21 +54,25 @@ export class HudController {
       permissionError: document.getElementById("permission-error"),
       cameraModeLabel: document.getElementById("camera-mode-label"),
       backendValue: document.getElementById("backend-value"),
+      frontModeButton: document.getElementById("front-mode-button"),
+      rearModeButton: document.getElementById("rear-mode-button"),
       zoneContext: document.getElementById("zone-context"),
       zoneValue: document.getElementById("zone-value"),
+      heroDistance: document.getElementById("hero-distance"),
       threatDetail: document.getElementById("threat-detail"),
       riskFill: document.getElementById("risk-fill"),
+      heroThresholds: document.getElementById("hero-thresholds"),
       rearBanner: document.getElementById("rear-banner"),
+      distanceValue: document.getElementById("distance-value"),
       vehicleCount: document.getElementById("vehicle-count"),
       fpsValue: document.getElementById("fps-value"),
       latencyValue: document.getElementById("latency-value"),
-      modelValue: document.getElementById("model-value"),
-      modeButtonValue: document.getElementById("mode-button-value"),
       soundButton: document.getElementById("sound-button"),
       soundButtonValue: document.getElementById("sound-button-value"),
       hapticsButton: document.getElementById("haptics-button"),
       hapticsButtonValue: document.getElementById("haptics-button-value"),
       statusMessage: document.getElementById("status-message"),
+      settingsButton: document.getElementById("settings-button"),
     };
   }
 
@@ -92,8 +99,9 @@ export class HudController {
     const meta = CAMERA_MODES[mode];
     this.refs.cameraModeLabel.textContent = meta.label;
     this.refs.zoneContext.textContent = meta.zoneLabel;
-    this.refs.modeButtonValue.textContent = meta.shortLabel;
     this.refs.rearBanner.hidden = mode !== "rear";
+    this.refs.frontModeButton.classList.toggle("is-active", mode === "front");
+    this.refs.rearModeButton.classList.toggle("is-active", mode === "rear");
     document.body.classList.toggle("rear-mode", mode === "rear");
   }
 
@@ -112,20 +120,33 @@ export class HudController {
       : "N/A";
   }
 
+  setSettingsOpen(open) {
+    document.body.classList.toggle("settings-open", open);
+    this.refs.settingsButton.classList.toggle("is-active", open);
+  }
+
   update(snapshot, { mode, fps }) {
     const style = ZONE_STYLES[snapshot.zone] ?? ZONE_STYLES.CLEAR;
+    const thresholds = snapshot.thresholds;
 
     document.body.dataset.zone = snapshot.zone.toLowerCase();
     document.documentElement.style.setProperty("--zone-color", style.color);
 
     this.refs.zoneValue.textContent = style.displayLabel;
+    this.refs.heroDistance.textContent = snapshot.primary
+      ? `~ ${formatMeters(snapshot.primary.distanceMeters)}`
+      : "No target";
     this.refs.threatDetail.textContent = buildThreatDetail(snapshot, mode);
+    this.refs.heroThresholds.textContent =
+      `Warning under ${formatMeters(thresholds.warningMeters)}. Danger under ${formatMeters(thresholds.dangerMeters)}.`;
+    this.refs.distanceValue.textContent = snapshot.primary
+      ? formatMeters(snapshot.primary.distanceMeters)
+      : "--";
     this.refs.vehicleCount.textContent = String(snapshot.count);
     this.refs.fpsValue.textContent = fps > 0 ? String(fps) : "--";
     this.refs.latencyValue.textContent = formatLatency(snapshot.latencyMs);
-    this.refs.modelValue.textContent = snapshot.modelLabel;
     this.refs.backendValue.textContent = snapshot.backend.toUpperCase();
-    this.refs.statusMessage.textContent = buildStatusMessage(snapshot, mode);
+    this.refs.statusMessage.textContent = buildStatusMessage(snapshot, mode, thresholds);
     this.refs.riskFill.style.transform = `scaleX(${Math.max(snapshot.risk, 0.03)})`;
   }
 }
