@@ -6,800 +6,117 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="SurronShield" />
-  <meta name="theme-color" content="#0a0a0f" />
+  <meta name="theme-color" content="#08151f" />
   <title>SurronShield</title>
-  <!-- Darren was here. -->
-  <!-- use tensor flow and cococ for the project. we are bassically making the camera system that detects cars, used on bikes. TensorFlow.js + COCO-SSD -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body data-zone="clear">
+  <div id="loading" class="screen screen--loading">
+    <div class="loading-mark">
+      <div class="loading-mark__ring"></div>
+      <div class="loading-mark__core">SS</div>
+    </div>
+    <div class="loading-copy">
+      <p class="loading-copy__kicker">SurronShield</p>
+      <h1 class="loading-copy__title">Ride-aware traffic vision</h1>
+      <p class="loading-copy__status" id="load-status">Preparing mobile detector...</p>
+    </div>
+    <div class="load-bar-wrap">
+      <div class="load-bar" id="load-bar"></div>
+    </div>
+  </div>
+
+  <div id="permission-error" class="screen screen--error" hidden>
+    <div class="error-card">
+      <p class="error-card__eyebrow">Camera access required</p>
+      <h2>Point the phone toward traffic and allow camera access.</h2>
+      <p>
+        SurronShield needs the camera to watch for cars, trucks, buses, motorcycles,
+        and bicycles around your bike.
+      </p>
+      <button id="retry-button" class="primary-button" type="button">Try again</button>
+    </div>
+  </div>
+
+  <video id="video" autoplay playsinline muted></video>
+  <canvas id="overlay"></canvas>
+
+  <div class="glow-layer" id="alert-glow"></div>
+  <div class="grid-layer"></div>
+  <div class="scanline-layer"></div>
+
+  <header class="topbar">
+    <div class="pill pill--brand">
+      <span class="pill__label">SurronShield</span>
+      <strong class="pill__value" id="camera-mode-label">Front watch</strong>
+    </div>
+    <div class="pill pill--status">
+      <span class="pill__label">Engine</span>
+      <strong class="pill__value" id="backend-value">Starting</strong>
+    </div>
+  </header>
+
+  <main class="hud">
+    <section class="hero-card">
+      <p class="hero-card__eyebrow" id="zone-context">Traffic ahead</p>
+      <h1 class="hero-card__zone" id="zone-value">CLEAR</h1>
+      <p class="hero-card__detail" id="threat-detail">No vehicles in the lane.</p>
+      <div class="risk-meter" aria-hidden="true">
+        <div class="risk-meter__fill" id="risk-fill"></div>
+      </div>
+    </section>
+
+    <div class="rear-banner" id="rear-banner" hidden>Rear mirror mode active</div>
+  </main>
+
+  <footer class="bottom-dock">
+    <section class="stats-grid">
+      <article class="stat-card">
+        <span class="stat-card__label">Vehicles</span>
+        <strong class="stat-card__value" id="vehicle-count">0</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-card__label">FPS</span>
+        <strong class="stat-card__value" id="fps-value">--</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-card__label">Latency</span>
+        <strong class="stat-card__value" id="latency-value">--</strong>
+      </article>
+      <article class="stat-card">
+        <span class="stat-card__label">Model</span>
+        <strong class="stat-card__value stat-card__value--small" id="model-value">Loading</strong>
+      </article>
+    </section>
+
+    <section class="controls-row">
+      <button id="mode-button" class="control-button" type="button">
+        <span class="control-button__label">Camera</span>
+        <strong class="control-button__value" id="mode-button-value">Front</strong>
+      </button>
+      <button id="sound-button" class="control-button" type="button">
+        <span class="control-button__label">Audio</span>
+        <strong class="control-button__value" id="sound-button-value">On</strong>
+      </button>
+      <button id="haptics-button" class="control-button" type="button">
+        <span class="control-button__label">Haptics</span>
+        <strong class="control-button__value" id="haptics-button-value">On</strong>
+      </button>
+    </section>
+
+    <p class="status-message" id="status-message">
+      Scanning for road traffic around the bike.
+    </p>
+  </footer>
+
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
-
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap');
-
-    :root {
-      --col-bg: #0a0a0f;
-      --col-safe: #00e5a0;
-      --col-medium: #ffb800;
-      --col-danger: #ff2d55;
-      --col-text: #e8eaf0;
-      --col-dim: rgba(232,234,240,0.4);
-      --col-panel: rgba(10,10,20,0.75);
-      --zone-color: var(--col-safe);
-      --overlay-glow: rgba(0,229,160,0.08);
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-    html, body {
-      width: 100%; height: 100%;
-      background: var(--col-bg);
-      color: var(--col-text);
-      font-family: 'Rajdhani', sans-serif;
-      overflow: hidden;
-      touch-action: none;
-    }
-
-    /* ── ashish cam ── */
-    #video {
-      position: fixed;
-      inset: 0;
-      width: 100%; height: 100%;
-      object-fit: cover;
-      z-index: 0;
-      opacity: 0;
-      transition: opacity 0.6s ease;
-    }
-    #video.live { opacity: 1; }
-
-    /* ── CANVAs ── */
-    #canvas {
-      position: fixed;
-      inset: 0;
-      width: 100%; height: 100%;
-      z-index: 1;
-      pointer-events: none;
-    }
-
-    /* ── vinjet ── */
-    #vinjete {
-      position: fixed;
-      inset: 0;
-      z-index: 2;
-      pointer-events: none;
-      background: radial-gradient(ellipse at center,
-        transparent 40%,
-        var(--overlay-glow) 100%);
-      transition: background 0.25s ease, box-shadow 0.25s ease;
-    }
-    #vinjete.danger {
-      box-shadow: inset 0 0 120px rgba(255,45,85,0.45);
-      background: radial-gradient(ellipse at center, transparent 30%, rgba(255,45,85,0.12) 100%);
-      animation: pulse-danger 0.6s ease-in-out infinite alternate;
-    }
-    #vinjete.medium {
-      box-shadow: inset 0 0 80px rgba(255,184,0,0.25);
-      background: radial-gradient(ellipse at center, transparent 35%, rgba(255,184,0,0.08) 100%);
-    }
-    @keyframes pulse-danger {
-      from { opacity: 0.7; }
-      to   { opacity: 1; }
-    }
-
-    /* ── cool texture to make it look EVEN COOLER ── */
-    #scanlines {
-      position: fixed;
-      inset: 0;
-      z-index: 3;
-      pointer-events: none;
-      background: repeating-linear-gradient(
-        to bottom,
-        transparent,
-        transparent 3px,
-        rgba(0,0,0,0.06) 3px,
-        rgba(0,0,0,0.06) 4px
-      );
-    }
-
-    /* ── ZONE BANNER ── */
-    #zone-banner {
-      position: fixed;
-      top: env(safe-area-inset-top, 0px);
-      left: 0; right: 0;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 18px 20px 12px;
-    }
-
-    #zone-label {
-      font-size: 11px;
-      font-weight: 600;
-      letter-spacing: 0.35em;
-      text-transform: uppercase;
-      color: var(--col-dim);
-      font-family: 'Share Tech Mono', monospace;
-      margin-bottom: 4px;
-    }
-
-    #zone-value {
-      font-size: 52px;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      line-height: 1;
-      color: var(--zone-color);
-      text-shadow: 0 0 32px var(--zone-color), 0 0 8px var(--zone-color);
-      transition: color 0.2s, text-shadow 0.2s;
-      font-family: 'Rajdhani', sans-serif;
-    }
-
-    /* ── loading screen for cool ass effects ── */
-    #loading {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      background: var(--col-bg);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 20px;
-      transition: opacity 0.6s ease;
-    }
-    #loading.hidden { opacity: 0; pointer-events: none; }
-
-    .logo {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
-    .logo-icon {
-      width: 64px; height: 64px;
-      border: 2px solid var(--col-safe);
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 24px rgba(0,229,160,0.4);
-      animation: spin-border 3s linear infinite;
-    }
-    @keyframes spin-border {
-      0%   { box-shadow: 0 0 24px rgba(0,229,160,0.4), 2px 0 0 var(--col-safe); }
-      50%  { box-shadow: 0 0 40px rgba(0,229,160,0.7), -2px 0 0 var(--col-safe); }
-      100% { box-shadow: 0 0 24px rgba(0,229,160,0.4), 2px 0 0 var(--col-safe); }
-    }
-    .logo-icon svg { width: 34px; height: 34px; fill: var(--col-safe); }
-    .logo-name {
-      font-size: 28px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      color: var(--col-text);
-    }
-    .logo-tagline {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      color: var(--col-dim);
-    }
-
-    #load-status {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 13px;
-      color: var(--col-safe);
-      letter-spacing: 0.08em;
-    }
-
-    .load-bar-wrap {
-      width: 200px;
-      height: 2px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    .load-bar {
-      height: 100%;
-      width: 0%;
-      background: var(--col-safe);
-      box-shadow: 0 0 8px var(--col-safe);
-      transition: width 0.4s ease;
-    }
-
-    /* ── Make the ui look cooler.  ── */
-    .hud-corner {
-      position: fixed;
-      z-index: 8;
-      width: 22px; height: 22px;
-      border-color: rgba(0,229,160,0.5);
-      border-style: solid;
-    }
-    .hud-corner.tl { top: calc(env(safe-area-inset-top,0px) + 56px); left: 14px; border-width: 2px 0 0 2px; }
-    .hud-corner.tr { top: calc(env(safe-area-inset-top,0px) + 56px); right: 14px; border-width: 2px 2px 0 0; }
-    .hud-corner.bl { bottom: calc(env(safe-area-inset-bottom,0px) + 80px); left: 14px; border-width: 0 0 2px 2px; }
-    .hud-corner.br { bottom: calc(env(safe-area-inset-bottom,0px) + 80px); right: 14px; border-width: 0 2px 2px 0; }
-
-    /* ── stats bar, bottom of the screen ── */
-    #stats-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0; right: 0;
-      z-index: 10;
-      padding: 12px 20px calc(env(safe-area-inset-bottom, 8px) + 12px);
-      background: linear-gradient(to top, rgba(10,10,20,0.9) 0%, transparent 100%);
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-    }
-
-    .stat-block {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-    }
-    .stat-val {
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 20px;
-      color: var(--col-text);
-      line-height: 1;
-    }
-    .stat-label {
-      font-size: 9px;
-      letter-spacing: 0.25em;
-      text-transform: uppercase;
-      color: var(--col-dim);
-    }
-
-    /* ── CAR COUNT BADGE ── */
-    #numberofcars-wrap {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    #numberofcars {
-      font-size: 36px;
-      font-weight: 700;
-      color: var(--zone-color);
-      text-shadow: 0 0 16px var(--zone-color);
-      transition: color 0.2s, text-shadow 0.2s;
-      line-height: 1;
-    }
-
-    /* ── Rohan mode. BUTTON ── */
-    #RohanModeButton {
-      position: fixed;
-      top: calc(env(safe-area-inset-top, 0px) + 14px);
-      right: 16px;
-      z-index: 15;
-      background: var(--col-panel);
-      border: 1px solid rgba(255,255,255,0.15);
-      color: var(--col-dim);
-      font-size: 18px;
-      width: 38px; height: 38px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      backdrop-filter: blur(8px);
-    }
-    #RohanModeButton.muted { color: rgba(255,45,85,0.7); border-color: rgba(255,45,85,0.3); }
-
-    /* ── What happens when theres no cars? Glad u asked bruh ── */
-    #no-car-msg {
-      position: fixed;
-      bottom: 100px;
-      left: 50%; transform: translateX(-50%);
-      z-index: 9;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      color: rgba(232,234,240,0.25);
-      text-transform: uppercase;
-      white-space: nowrap;
-      transition: opacity 0.4s;
-    }
-    #no-car-msg.hidden { opacity: 0; }
-
-    /* ── invert the cam so that you can still process info correctly when it is morrored ── */
-    #video.mirrored { transform: scaleX(-1); }
-    #canvas.mirrored { transform: scaleX(-1); }
-
-    /* ── toggle between buttons and modes ── */
-    #mode-button {
-      position: fixed;
-      top: calc(env(safe-area-inset-top, 0px) + 14px);
-      left: 16px;
-      z-index: 15;
-      background: var(--col-panel);
-      border: 1px solid rgba(255,255,255,0.15);
-      color: var(--col-dim);
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 10px;
-      letter-spacing: 0.12em;
-      width: 70px; height: 38px;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 1px;
-      backdrop-filter: blur(8px);
-      transition: border-color 0.2s, color 0.2s;
-    }
-    #mode-button .mode-icon { font-size: 15px; line-height: 1; }
-    #mode-button .mode-text { font-size: 9px; letter-spacing: 0.15em; }
-    #mode-button.rear {
-      border-color: rgba(255,184,0,0.5);
-      color: #ffb800;
-      text-shadow: 0 0 8px rgba(255,184,0,0.6);
-    }
-
-    /* ── shows the rear mode badge ── */
-    #rear-badge {
-      position: fixed;
-      top: calc(env(safe-area-inset-top, 0px) + 60px);
-      left: 50%; transform: translateX(-50%);
-      z-index: 9;
-      font-family: 'Share Tech Mono', monospace;
-      font-size: 9px;
-      letter-spacing: 0.25em;
-      color: rgba(255,184,0,0.6);
-      text-transform: uppercase;
-      white-space: nowrap;
-      display: none;
-    }
-    #rear-badge.show { display: block; }
-
-    /* ── almost forgetted ts ── */
-    #perm-error {
-      position: fixed;
-      inset: 0;
-      z-index: 50;
-      background: var(--col-bg);
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      padding: 32px;
-      text-align: center;
-    }
-    #perm-error.show { display: flex; }
-    #perm-error p { color: var(--col-dim); font-size: 15px; line-height: 1.6; }
-    #perm-error strong { color: var(--col-danger); font-size: 18px; display: block; margin-bottom: 4px; }
-    #retry-button {
-      background: none;
-      border: 1px solid var(--col-safe);
-      color: var(--col-safe);
-      padding: 12px 28px;
-      font-family: 'Rajdhani', sans-serif;
-      font-size: 16px;
-      font-weight: 600;
-      letter-spacing: 0.1em;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-</style>
-</head>
-<body>
-
-<!-- load -->
-<div id="loading">
-    <div class="logo">
-    <div class="logo-icon">
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
-    <path d="M12 1L9 6h6L12 1zm0 22l3-5H9l3 5z" opacity="0.5"/>
-    </svg>
-    </div>
-    <div class="logo-name">Surron Shield</div>
-    <div class="logo-tagline">Stay safe out there</div>
-    </div>
-    <div id="load-status">loading (no, this is not just for show)</div>
-   <div class="load-bar-wrap"><div class="load-bar" id="load-bar"></div></div>
-</div>
-
-<!-- PERMISSION ERROR -->
-<div id="perm-error">
-  <strong>I need ur camera...</strong>
-  <p>Surron Sheild needs your camera to detect vehicles. Please allow camera access in your browser settings and try again.</p>
-  <button id="retry-button" onclick="location.reload()">RETRY</button>
-</div>
-
-<!-- CAMERA -->
-<video id="video" autoplay playsinline muted></video>
-<canvas id="canvas"></canvas>
-
-<!-- vinjete & SCANLINES -->
-<div id="vinjete"></div>
-<div id="scanlines"></div>
-
-<!-- HUD CORNERS -->
-<div class="hud-corner tl"></div>
-<div class="hud-corner tr"></div>
-<div class="hud-corner bl"></div>
-<div class="hud-corner br"></div>
-
-<!-- MODE TOGGLE -->
-<button id="mode-button" title="Switch camera mode">
-  <span class="mode-icon">🔭</span>
-  <span class="mode-text" id="mode-text">FRONT</span>
-</button>
-
-<!-- MUTE BUTTON -->
-<button id="RohanModeButton" title="Toggle sound">🔊</button>
-
-<!-- REAR MODE BADGE -->
-<div id="rear-badge" id="rear-badge">◀ REAR VIEW — SMART MIRROR</div>
-
-<!-- ZONE BANNER -->
-<div id="zone-banner">
-  <div id="zone-label">NEAREST VEHICLE</div>
-  <div id="zone-value">CLEAR</div>
-</div>
-
-<!-- STATS BAR -->
-<div id="stats-bar">
-  <div class="stat-block">
-  <span class="stat-val" id="fps-val">--</span>
-  <span class="stat-label">FPS</span>
-  </div>
-  <div id="numberofcars-wrap" class="stat-block">
-  <span id="numberofcars">0</span>
-  <span class="stat-label">VEHICLES</span>
-  </div>
-  <div class="stat-block">
-  <span class="stat-val" id="model-val">COCO</span>
-  <span class="stat-label">MODEL</span>
-  </div>
-</div>
-
-<div id="no-car-msg">SCANNING FOR VEHICLES…</div>
-
-<script>
-// ── CONFIG ──────────────────────────────────────────────
-const VEHICLE_CLASSES = ['car','truck','bus','motorcycle','bicycle'];
-
-// Front mode thresholds (forward-facing, more relaxed)
-const ZONE_THRESHOLDS_FRONT  = { CLOSE: 0.15, MEDIUM: 0.05 };
-// Rear mode thresholds (tighter — approaching cars = more danger)
-const ZONE_THRESHOLDS_REAR   = { CLOSE: 0.09, MEDIUM: 0.03 };
-
-let ZONE_THRESHOLDS = { ...ZONE_THRESHOLDS_FRONT };
-
-const AUDIO_INTERVALS = { CLOSE: 500, MEDIUM: 1200, FAR: 3000 };
-const DETECTION_INTERVAL_MS = 120;
-
-// ── STATE ──────────────────────────────────────────────
-let model = null;
-let currentZone = 'CLEAR';
-let muted = false;
-let rearMode = false;
-let lastAudioTime = 0;
-let lastDetectTime = 0;
-let fpsFrames = 0; let fpsLast = performance.now(); let fpsVal = 0;
-let audioCtx = null;
-let animId = null;
-let detections = [];
-let currentStream = null;
-
-// ── ELEMENTS ───────────────────────────────────────────
-const video    = document.getElementById('video');
-const canvas   = document.getElementById('canvas');
-const ctx      = canvas.getContext('2d');
-const zoneVal  = document.getElementById('zone-value');
-const carCount = document.getElementById('numberofcars');
-const fpsEl    = document.getElementById('fps-val');
-const vigEl    = document.getElementById('vinjete');
-const loadEl   = document.getElementById('loading');
-const loadBar  = document.getElementById('load-bar');
-const loadSt   = document.getElementById('load-status');
-const mutebutton  = document.getElementById('RohanModeButton');
-const modebutton  = document.getElementById('mode-button');
-const modeText = document.getElementById('mode-text');
-const rearBadge= document.getElementById('rear-badge');
-const noCarMsg = document.getElementById('no-car-msg');
-const permErr  = document.getElementById('perm-error');
-
-// ── ZONE COLORS ─────────────────────────────────────────
-const ZONE_META = {
-  CLEAR:  { label: 'CLEAR',    color: '#00e5a0', glow: '0 0 32px #00e5a0, 0 0 8px #00e5a0' },
-  FAR:    { label: 'FAR',      color: '#00e5a0', glow: '0 0 32px #00e5a0, 0 0 8px #00e5a0' },
-  MEDIUM: { label: 'MEDIUM',   color: '#ffb800', glow: '0 0 32px #ffb800, 0 0 8px #ffb800' },
-  CLOSE:  { label: 'CLOSE ⚠',  color: '#ff2d55', glow: '0 0 32px #ff2d55, 0 0 8px #ff2d55' },
-};
-
-// ── AUDIO ───────────────────────────────────────────────
-function getAudioCtx() {
-  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  return audioCtx;
-}
-function beep(zone) {
-  if (muted) return;
-  const now = Date.now();
-  const interval = AUDIO_INTERVALS[zone] || 9999;
-  if (now - lastAudioTime < interval) return;
-  lastAudioTime = now;
-  try {
-  const ac = getAudioCtx();
-  const osc = ac.createOscillator();
-  const gain = ac.createGain();
-  osc.connect(gain); gain.connect(ac.destination);
-  if (zone === 'CLOSE') {
-  osc.frequency.value = 880;
-  gain.gain.setValueAtTime(0.4, ac.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.18);
-  osc.start(); osc.stop(ac.currentTime + 0.18);
-  } else if (zone === 'MEDIUM') {
-  osc.frequency.value = 520;
-  gain.gain.setValueAtTime(0.2, ac.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.25);
-  osc.start(); osc.stop(ac.currentTime + 0.25);
-  } else if (zone === 'FAR') {
-  osc.frequency.value = 330;
-  gain.gain.setValueAtTime(0.1, ac.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.3);
-  osc.start(); osc.stop(ac.currentTime + 0.3);
-  }
-  } catch(e) {}
-}
-
-// ── ZONE CALCULATION ────────────────────────────────────
-function calcZone(bbox, frameW, frameH) {
-  const area = (bbox[2] * bbox[3]) / (frameW * frameH);
-  if (area >= ZONE_THRESHOLDS.CLOSE)  return 'CLOSE';
-  if (area >= ZONE_THRESHOLDS.MEDIUM) return 'MEDIUM';
-  return 'FAR';
-}
-
-// ── Uopdate the ui] ───────────────────────────────────────────
-function setZone(zone) {
-  if (zone === currentZone) return;
-  currentZone = zone;
-  const meta = ZONE_META[zone];
-  document.documentElement.style.setProperty('--zone-color', meta.color);
-  // Dynamic label based on mode
-  const label = (zone === 'CLOSE' && rearMode) ? 'CAR BEHIND ⚠' : meta.label;
-  zoneVal.textContent = label;
-  zoneVal.style.color = meta.color;
-  zoneVal.style.textShadow = meta.glow;
-  carCount.style.color = meta.color;
-  carCount.style.textShadow = `0 0 16px ${meta.color}`;
-  vigEl.className = '';
-  if (zone === 'CLOSE')  vigEl.className = 'danger';
-  if (zone === 'MEDIUM') vigEl.className = 'medium';
-}
-
-// ── COORD TRANSFORM (video intrinsic → canvas display) ──
-// object-fit:cover scales the video to fill the canvas, cropping
-// the overflow. We must apply the same transform to bbox coords.
-function videoBboxToCanvas(bbox, W, H) {
-  const vw = video.videoWidth  || W;
-  const vh = video.videoHeight || H;
-
-  // Scale that object-fit:cover uses
-  const scale = Math.max(W / vw, H / vh);
-
-  // Offset (how much is cropped off each side)
-  const offX = (W - vw * scale) / 2;
-  const offY = (H - vh * scale) / 2;
-
-  return [
-    bbox[0] * scale + offX,
-    bbox[1] * scale + offY,
-    bbox[2] * scale,
-    bbox[3] * scale,
-  ];
-}
-
-// ── CANVAS DRAWING ──────────────────────────────────────
-const ZONE_COLORS_BOX = { FAR: '#00e5a0', MEDIUM: '#ffb800', CLOSE: '#ff2d55' };
-
-function drawDetections(dets, W, H) {
-  ctx.clearRect(0, 0, W, H);
-  for (const d of dets) {
-    const zone = calcZone(d.bbox, video.videoWidth || W, video.videoHeight || H);
-    const col  = ZONE_COLORS_BOX[zone];
-    const [x, y, w, h] = videoBboxToCanvas(d.bbox, W, H);
-    const score = Math.round(d.score * 100);
-
-    // Bounding box
-    ctx.strokeStyle = col;
-    ctx.lineWidth = 2;
-    ctx.shadowColor = col;
-    ctx.shadowBlur = 8;
-    ctx.strokeRect(x, y, w, h);
-    ctx.shadowBlur = 0;
-
-    // Corner accents
-    const cs = 12;
-    ctx.lineWidth = 3;
-    ctx.strokeStyle = col;
-    [[x,y],[x+w,y],[x,y+h],[x+w,y+h]].forEach(([cx,cy],i) => {
-      ctx.beginPath();
-      const sx = (i%2===0) ? 1 : -1;
-      const sy = (i<2)     ? 1 : -1;
-      ctx.moveTo(cx, cy + sy*cs); ctx.lineTo(cx, cy); ctx.lineTo(cx + sx*cs, cy);
-      ctx.stroke();
-    });
-
-    // Label pill
-    const label = `${zone}  ${score}%`;
-    ctx.font = '600 12px "Share Tech Mono", monospace';
-    const tw = ctx.measureText(label).width;
-    const px = 8, py = 5;
-    const ly = y > 28 ? y - 26 : y + h + 4;
-    ctx.fillStyle = col + 'cc';
-    ctx.beginPath();
-    ctx.roundRect(x, ly, tw + px*2, 22, 4);
-    ctx.fill();
-    ctx.fillStyle = '#0a0a0f';
-    ctx.fillText(label, x + px, ly + 15);
-  }
-}
-
-// ── DETECTION LOOP ──────────────────────────────────────
-async function detect() {
-const now = performance.now();
-
-// FPS
-fpsFrames++;
-if (now - fpsLast >= 1000) {
-fpsVal = fpsFrames;
-fpsEl.textContent = fpsFrames;
-fpsFrames = 0;
-fpsLast = now;
-  }
-
-const W = canvas.width;
-const H = canvas.height;
-
-  // cococooocococcocococococo
-if (now - lastDetectTime >= DETECTION_INTERVAL_MS && model && video.readyState === 4) {
-lastDetectTime = now;
-try {
-const raw = await model.detect(video);
-detections = raw.filter(d => VEHICLE_CLASSES.includes(d.class) && d.score > 0.45);
-} catch(e) {}
-  }
-
-  // Find worst zone
-  let worstZone = 'CLEAR';
-  for (const d of detections) {
-    const z = calcZone(d.bbox, video.videoWidth || W, video.videoHeight || H);
-    if (z === 'CLOSE')                                  { worstZone = 'CLOSE'; break; }
-    if (z === 'MEDIUM' && worstZone !== 'CLOSE')        { worstZone = 'MEDIUM'; }
-    if (z === 'FAR'    && worstZone === 'CLEAR')        { worstZone = 'FAR'; }
-  }
-
-  setZone(worstZone);
-  carCount.textContent = detections.length;
-  noCarMsg.className = detections.length === 0 ? '' : 'hidden';
-
-  // Beep
-  if (worstZone !== 'CLEAR') beep(worstZone);
-
-  // Draw
-  drawDetections(detections, W, H);
-
-  animId = requestAnimationFrame(detect);
-}
-
-// ── one size fits all ──────────────────────────────────────────────
-function resize() {
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-window.addEventListener('resize', resize);
-resize();
-
-// ── Switch cam ────────────────────────────────────────
-async function switchCamera() {
-  modebutton.disabled = true;
-  rearMode = !rearMode;
-
-  // Stop existing stream
-  if (currentStream) {
-    currentStream.getTracks().forEach(t => t.stop());
-    currentStream = null;
-  }
-
-  // Reset detections during switch
-  detections = [];
-  currentZone = 'CLEAR'; // force re-render
-  setZone('CLEAR');
-  carCount.textContent = '0';
-
-  // Update thresholds
-  ZONE_THRESHOLDS = rearMode ? { ...ZONE_THRESHOLDS_REAR } : { ...ZONE_THRESHOLDS_FRONT };
-
-  // Update UI
-  if (rearMode) {
-    modebutton.classList.add('rear');
-    modeText.textContent = 'REAR';
-    modebutton.querySelector('.mode-icon').textContent = '🪞';
-    document.getElementById('zone-label').textContent = 'REAR TRAFFIC';
-    rearBadge.classList.add('show');
-    video.classList.add('mirrored');
-    canvas.classList.add('mirrored');
-  } else {
-    modebutton.classList.remove('rear');
-    modeText.textContent = 'FRONT';
-    modebutton.querySelector('.mode-icon').textContent = '🔭';
-    document.getElementById('zone-label').textContent = 'NEAREST VEHICLE';
-    rearBadge.classList.remove('show');
-    video.classList.remove('mirrored');
-    canvas.classList.remove('mirrored');
-  }
-
-  // Start new stream
-  try {
-    const facing = rearMode ? 'user' : 'environment';
-    const stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: facing }, width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: false
-    });
-    currentStream = stream;
-    video.srcObject = stream;
-    await new Promise(r => video.onloadedmetadata = r);
-  } catch(e) {
-    console.warn('Camera switch failed', e);
-  }
-
-  modebutton.disabled = false;
-}
-
-modebutton.addEventListener('click', switchCamera);
-
-// ── Rohan. ────────────────────────────────────────────────
-mutebutton.addEventListener('click', () => {
-  muted = !muted;
-  mutebutton.textContent = muted ? '🔇' : '🔊';
-  mutebutton.className = muted ? 'muted' : '';
-  // Unlock audio context on first interaction
-  if (!muted) getAudioCtx();
-});
-
-// ── INIT ────────────────────────────────────────────────
-async function init() {
-  // Step 1: Camera
-  loadSt.textContent = 'request CAMERA…';
-  loadBar.style.width = '15%';
-  let stream;
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
-      audio: false
-    });
-  } catch(e) {
-    loadEl.classList.add('hidden');
-    permErr.classList.add('show');
-    return;
-  }
-  currentStream = stream;
-  video.srcObject = stream;
-  await new Promise(r => video.onloadedmetadata = r);
-  video.classList.add('live');
-  loadBar.style.width = '40%';
-  loadSt.textContent = 'LOADING AI MODEL…';
-
-  // Step 2: Model
-  try {
-    model = await cocoSsd.load({ base: 'lite_mobilenet_v2' });
-  } catch(e) {
-    model = await cocoSsd.load();
-  }
-  loadBar.style.width = '90%';
-  loadSt.textContent = 'CALIBRATING…';
-  await new Promise(r => setTimeout(r, 400));
-  loadBar.style.width = '100%';
-  await new Promise(r => setTimeout(r, 200));
-
-  // Step 3: Go
-  loadEl.classList.add('hidden');
-  setTimeout(() => loadEl.style.display = 'none', 700);
-  detect();
-}
-
-init();
-</script>
+  <script type="module" src="./src/app.js"></script>
 </body>
 </html>
