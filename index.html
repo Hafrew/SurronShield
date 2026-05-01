@@ -56,7 +56,7 @@
       <span class="brand-chip__label">SurronShield</span>
       <strong class="brand-chip__value" id="camera-mode-label">Front watch</strong>
     </div>
-    <div class="topbar__cluster">
+    <div class="topbar__controls">
       <div class="pill pill--status">
         <span class="pill__label">Engine</span>
         <strong class="pill__value" id="backend-value">Starting</strong>
@@ -64,6 +64,18 @@
       <button id="settings-button" class="action-chip action-chip--icon" type="button">
         <span class="action-chip__label">Tune</span>
         <strong class="action-chip__value">Zones</strong>
+      </button>
+      <button id="sound-button" class="action-chip" type="button">
+        <span class="action-chip__label">Audio</span>
+        <strong class="action-chip__value" id="sound-button-value">On</strong>
+      </button>
+      <button id="haptics-button" class="action-chip" type="button">
+        <span class="action-chip__label">Haptic</span>
+        <strong class="action-chip__value" id="haptics-button-value">On</strong>
+      </button>
+      <button id="diagnostics-button" class="action-chip" type="button">
+        <span class="action-chip__label">Diag</span>
+        <strong class="action-chip__value">Stats</strong>
       </button>
     </div>
   </header>
@@ -73,14 +85,7 @@
       <button id="front-mode-button" class="mode-switch__button" type="button">Front</button>
       <button id="rear-mode-button" class="mode-switch__button" type="button">Rear</button>
     </div>
-    <button id="sound-button" class="action-chip" type="button">
-      <span class="action-chip__label">Audio</span>
-      <strong class="action-chip__value" id="sound-button-value">On</strong>
-    </button>
-    <button id="haptics-button" class="action-chip" type="button">
-      <span class="action-chip__label">Haptics</span>
-      <strong class="action-chip__value" id="haptics-button-value">On</strong>
-    </button>
+    <div class="rear-banner" id="rear-banner" hidden>Rear mirror</div>
   </section>
 
   <section class="health-banner" id="health-banner" hidden aria-live="polite">
@@ -89,23 +94,27 @@
   </section>
 
   <main class="hud">
-    <section class="hero-card">
-      <div class="hero-card__meta">
-        <p class="hero-card__eyebrow" id="zone-context">Traffic ahead</p>
-        <div class="hero-card__distance" id="hero-distance">--</div>
-      </div>
-      <h1 class="hero-card__zone" id="zone-value">CLEAR</h1>
-      <p class="hero-card__detail" id="threat-detail">No vehicles in the lane.</p>
-      <div class="risk-meter" aria-hidden="true">
+    <section class="bottom-hud" aria-live="polite">
+      <span class="bottom-hud__context" id="zone-context">Traffic ahead</span>
+      <strong class="bottom-hud__zone" id="zone-value">CLEAR</strong>
+      <span class="bottom-hud__detail" id="threat-detail">No vehicles</span>
+      <span class="bottom-hud__distance" id="hero-distance">--</span>
+      <div class="risk-meter" hidden aria-hidden="true">
         <div class="risk-meter__fill" id="risk-fill"></div>
       </div>
-      <p class="hero-card__footer" id="hero-thresholds">Warning under --. Danger under --.</p>
+      <p class="hero-card__footer" id="hero-thresholds" hidden>Warning under --. Danger under --.</p>
     </section>
-
-    <div class="rear-banner" id="rear-banner" hidden>Rear mirror mode active</div>
   </main>
 
-  <aside class="telemetry-panel">
+  <aside class="diagnostics-drawer" id="diagnostics-drawer" hidden aria-label="Diagnostics">
+    <header class="diagnostics-drawer__header">
+      <div>
+        <span>Diagnostics</span>
+        <strong id="diagnostics-fov">FOV estimated</strong>
+      </div>
+      <button id="diagnostics-close-button" class="diagnostics-drawer__close" type="button">Close</button>
+    </header>
+    <div class="diagnostics-grid">
     <article class="telemetry-card">
       <span class="telemetry-card__label">Distance</span>
       <strong class="telemetry-card__value" id="distance-value">--</strong>
@@ -122,9 +131,10 @@
       <span class="telemetry-card__label">Latency</span>
       <strong class="telemetry-card__value" id="latency-value">--</strong>
     </article>
+    </div>
   </aside>
 
-  <p class="status-message" id="status-message">
+  <p class="status-message" id="status-message" hidden>
     Scanning for road traffic around the bike.
   </p>
 

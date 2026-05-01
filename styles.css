@@ -293,7 +293,7 @@ body[data-zone="close"] .glow-layer {
 .action-rail,
 .health-banner,
 .hud,
-.telemetry-panel,
+.diagnostics-drawer,
 .status-message {
   position: fixed;
   z-index: 4;
@@ -304,19 +304,29 @@ body[data-zone="close"] .glow-layer {
   left: 0;
   right: 0;
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
   padding:
-    calc(var(--safe-area-top) + 12px)
-    12px
+    calc(var(--safe-area-top) + 8px)
+    8px
     0;
   pointer-events: none;
 }
 
-.topbar__cluster {
+.topbar__controls {
   display: flex;
-  align-items: stretch;
-  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 0;
+  overflow-x: auto;
+  pointer-events: auto;
+  scrollbar-width: none;
+}
+
+.topbar__controls::-webkit-scrollbar {
+  display: none;
 }
 
 .brand-chip,
@@ -344,16 +354,17 @@ body[data-zone="close"] .glow-layer {
 .brand-chip,
 .pill {
   pointer-events: auto;
-  min-height: 60px;
+  min-height: 42px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
-  padding: 10px 14px;
+  gap: 2px;
+  padding: 7px 9px;
 }
 
 .brand-chip {
-  min-width: 146px;
+  min-width: 112px;
+  max-width: 144px;
 }
 
 .brand-chip__label,
@@ -368,35 +379,37 @@ body[data-zone="close"] .glow-layer {
 
 .brand-chip__value,
 .pill__value {
-  font-size: 16px;
-  letter-spacing: 0.04em;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0.02em;
 }
 
 .pill {
   align-items: flex-end;
   text-align: right;
-  min-width: 110px;
+  min-width: 58px;
 }
 
 .action-chip {
   pointer-events: auto;
-  min-height: 50px;
-  border-radius: 16px;
-  padding: 8px 12px;
+  min-height: 42px;
+  border-radius: 14px;
+  padding: 7px 9px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 4px;
+  gap: 2px;
   color: var(--text);
 }
 
 .action-chip__value {
-  font-size: 16px;
-  letter-spacing: 0.04em;
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0.02em;
 }
 
 .action-chip--icon {
-  min-width: 84px;
+  min-width: 54px;
 }
 
 .action-chip.is-off .action-chip__value {
@@ -408,44 +421,39 @@ body[data-zone="close"] .glow-layer {
 }
 
 .action-rail {
-  top: calc(var(--safe-area-top) + 84px);
+  top: calc(var(--safe-area-top) + 58px);
   left: 0;
-  right: 0;
+  right: auto;
   display: flex;
-  gap: 8px;
-  padding: 0 12px;
-  overflow-x: auto;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
   pointer-events: auto;
-  scrollbar-width: none;
-}
-
-.action-rail::-webkit-scrollbar {
-  display: none;
 }
 
 .mode-switch {
   display: inline-grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 4px;
-  padding: 4px;
-  min-width: 168px;
-  border-radius: 18px;
+  gap: 3px;
+  padding: 3px;
+  min-width: 118px;
+  border-radius: 14px;
   border: 1px solid var(--panel-border);
-  background: rgba(6, 16, 21, 0.84);
+  background: rgba(6, 16, 21, 0.58);
   backdrop-filter: blur(14px);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
 }
 
 .mode-switch__button {
-  min-height: 44px;
+  min-height: 32px;
   border: 0;
-  border-radius: 14px;
+  border-radius: 11px;
   background: transparent;
   color: var(--muted);
   font-family: "Share Tech Mono", monospace;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
-  font-size: 11px;
+  letter-spacing: 0.08em;
+  font-size: 10px;
 }
 
 .mode-switch__button.is-active {
@@ -455,13 +463,14 @@ body[data-zone="close"] .glow-layer {
 }
 
 .health-banner {
-  top: calc(var(--safe-area-top) + 138px);
-  right: 12px;
-  width: min(46vw, 360px);
+  top: calc(var(--safe-area-top) + 98px);
+  left: 8px;
+  right: 8px;
+  width: auto;
   display: grid;
-  gap: 5px;
-  padding: 10px 12px;
-  border-radius: 16px;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 14px;
   border: 1px solid rgba(255, 190, 98, 0.34);
   background: rgba(18, 14, 8, 0.82);
   color: #ffdfaa;
@@ -501,64 +510,73 @@ body[data-zone="close"] .glow-layer {
 }
 
 .hud {
-  top: calc(var(--safe-area-top) + 142px);
-  left: 12px;
-  width: min(76vw, 340px);
+  left: 8px;
+  right: 8px;
+  bottom: calc(var(--safe-area-bottom) + 10px);
+  width: auto;
   pointer-events: none;
 }
 
-.hero-card {
-  border-radius: 24px;
-  padding: 18px 18px 16px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.04), transparent 65%),
-    var(--panel-strong);
-}
-
-.hero-card__meta {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
+.bottom-hud {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 9px 12px;
+  border-radius: 18px;
+  border: 1px solid rgba(239, 247, 245, 0.12);
+  background: rgba(5, 12, 16, 0.58);
+  backdrop-filter: blur(18px) saturate(1.25);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
 }
 
-.hero-card__eyebrow {
-  font-size: 10px;
-  color: var(--muted);
+.bottom-hud__context {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
-.hero-card__distance {
-  color: rgba(239, 247, 245, 0.86);
+.bottom-hud__zone {
+  color: var(--zone-color);
   font-family: "Share Tech Mono", monospace;
-  font-size: 11px;
-  letter-spacing: 0.12em;
+  font-size: 12px;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.hero-card__zone {
-  margin-top: 10px;
-  color: var(--zone-color);
-  font-size: clamp(42px, 11vw, 72px);
-  line-height: 0.9;
-  letter-spacing: 0.06em;
-  text-shadow: 0 0 28px rgba(94, 242, 196, 0.24);
+.bottom-hud__zone::before {
+  content: "[";
 }
 
-.hero-card__detail {
-  margin-top: 8px;
-  font-size: 15px;
-  line-height: 1.25;
-  color: rgba(239, 247, 245, 0.86);
+.bottom-hud__zone::after {
+  content: "]";
 }
 
-.risk-meter {
-  position: relative;
-  margin-top: 14px;
-  width: 100%;
-  height: 8px;
+.bottom-hud__detail {
+  min-width: 0;
   overflow: hidden;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  color: rgba(239, 247, 245, 0.92);
+  font-size: 15px;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bottom-hud__detail::after {
+  content: " ·";
+  color: rgba(239, 247, 245, 0.46);
+}
+
+.bottom-hud__distance {
+  color: rgba(239, 247, 245, 0.95);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .risk-meter__fill {
@@ -582,41 +600,95 @@ body[data-zone="close"] .glow-layer {
 }
 
 .rear-banner {
-  margin-top: 10px;
+  margin: 0;
   display: inline-flex;
   align-items: center;
-  padding: 9px 12px;
+  min-height: 34px;
+  padding: 7px 10px;
   border-radius: 999px;
   background: rgba(255, 187, 89, 0.14);
   border: 1px solid rgba(255, 187, 89, 0.24);
   color: #ffd08f;
   font-family: "Share Tech Mono", monospace;
   font-size: 10px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.telemetry-panel {
-  right: 12px;
-  bottom: calc(var(--safe-area-bottom) + 18px);
-  width: min(52vw, 360px);
+.diagnostics-drawer {
+  left: 8px;
+  right: 8px;
+  bottom: calc(var(--safe-area-bottom) + 66px);
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid var(--panel-border);
+  background: rgba(5, 13, 18, 0.84);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34);
+  pointer-events: auto;
+}
+
+.diagnostics-drawer[hidden] {
+  display: none;
+}
+
+.diagnostics-drawer__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 9px;
+  font-family: "Share Tech Mono", monospace;
+  text-transform: uppercase;
+}
+
+.diagnostics-drawer__header div {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  pointer-events: none;
+  gap: 2px;
+}
+
+.diagnostics-drawer__header span {
+  color: var(--text);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+}
+
+.diagnostics-drawer__header strong {
+  color: var(--muted);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+
+.diagnostics-drawer__close {
+  min-height: 30px;
+  border: 1px solid rgba(239, 247, 245, 0.12);
+  border-radius: 999px;
+  padding: 0 10px;
+  background: rgba(239, 247, 245, 0.08);
+  color: var(--text);
+  font-family: "Share Tech Mono", monospace;
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.diagnostics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
 }
 
 .telemetry-card {
-  min-height: 74px;
-  padding: 10px 12px;
+  min-height: 48px;
+  padding: 8px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  background: var(--panel-strong);
+  border-radius: 12px;
+  background: rgba(6, 16, 21, 0.72);
 }
 
 .telemetry-card__value {
-  font-size: clamp(18px, 5vw, 30px);
+  font-size: 18px;
   line-height: 1;
 }
 
@@ -770,7 +842,7 @@ body.settings-open .topbar,
 body.settings-open .action-rail,
 body.settings-open .health-banner,
 body.settings-open .hud,
-body.settings-open .telemetry-panel,
+body.settings-open .diagnostics-drawer,
 body.settings-open .status-message {
   filter: blur(5px);
 }
@@ -791,40 +863,35 @@ body.settings-open .status-message {
 
   .brand-chip {
     min-width: 0;
-    flex: 1;
+    flex: 0 1 118px;
   }
 
   .pill {
-    min-width: 92px;
+    min-width: 56px;
   }
 
-  .hud {
-    width: min(88vw, 340px);
+  .topbar__controls {
+    flex: 1;
   }
 
   .health-banner {
     top: auto;
-    right: 12px;
-    bottom: calc(var(--safe-area-bottom) + 210px);
+    right: 8px;
+    bottom: calc(var(--safe-area-bottom) + 122px);
     width: auto;
-    left: 12px;
+    left: 8px;
   }
 
-  .telemetry-panel {
-    left: 12px;
-    right: 12px;
-    width: auto;
-    bottom: calc(var(--safe-area-bottom) + 72px);
+  .diagnostics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .telemetry-card {
-    min-height: 66px;
+    min-height: 50px;
   }
 
-  .status-message {
-    left: 12px;
-    right: 12px;
-    width: auto;
+  .bottom-hud {
+    grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
   .settings-summary {
@@ -833,19 +900,52 @@ body.settings-open .status-message {
 }
 
 @media (max-width: 420px) {
-  .topbar__cluster {
-    gap: 6px;
+  .topbar {
+    align-items: stretch;
+  }
+
+  .topbar__controls {
+    gap: 4px;
   }
 
   .action-rail {
-    top: calc(var(--safe-area-top) + 78px);
+    top: calc(var(--safe-area-top) + 56px);
   }
 
-  .hud {
-    top: calc(var(--safe-area-top) + 134px);
+  .brand-chip__label,
+  .pill__label,
+  .action-chip__label {
+    font-size: 8px;
   }
 
-  .hero-card__zone {
-    font-size: clamp(38px, 12vw, 56px);
+  .brand-chip__value,
+  .pill__value,
+  .action-chip__value {
+    font-size: 12px;
+  }
+
+  .action-chip,
+  .pill,
+  .brand-chip {
+    padding-left: 7px;
+    padding-right: 7px;
+  }
+
+  .bottom-hud {
+    min-height: 44px;
+    padding: 8px 10px;
+    gap: 6px;
+  }
+
+  .bottom-hud__zone {
+    font-size: 11px;
+  }
+
+  .bottom-hud__detail {
+    font-size: 14px;
+  }
+
+  .bottom-hud__distance {
+    font-size: 13px;
   }
 }

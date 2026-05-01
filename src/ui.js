@@ -24,19 +24,13 @@ function formatLatency(latencyMs) {
 
 function buildThreatDetail(snapshot, mode) {
   if (!snapshot.primary) {
-    return mode === "rear"
-      ? "Watching the lane behind the bike."
-      : "Watching the road ahead.";
+    return mode === "rear" ? "Watching rear" : "Watching road";
   }
 
-  const subject = snapshot.primary.label.toLowerCase();
+  const subject = snapshot.primary.label;
   const direction = CAMERA_MODES[mode].directionLabel;
-  const meters = formatMeters(snapshot.primary.distanceMeters);
-  const carLengths = formatCarLengths(snapshot.primary.distanceCarLengths);
-  const rangeSource =
-    snapshot.primary.calibrationSource === "tuned" ? "tuned range" : "estimated range";
 
-  return `${subject} ${direction} at about ${meters} (${carLengths}, ${rangeSource}).`;
+  return `${subject} ${direction}`;
 }
 
 function buildStatusMessage(snapshot, mode, thresholds) {
@@ -62,6 +56,9 @@ export class HudController {
       healthBanner: document.getElementById("health-banner"),
       healthState: document.getElementById("health-state"),
       healthDetail: document.getElementById("health-detail"),
+      diagnosticsDrawer: document.getElementById("diagnostics-drawer"),
+      diagnosticsButton: document.getElementById("diagnostics-button"),
+      diagnosticsFov: document.getElementById("diagnostics-fov"),
       cameraModeLabel: document.getElementById("camera-mode-label"),
       backendValue: document.getElementById("backend-value"),
       frontModeButton: document.getElementById("front-mode-button"),
@@ -147,6 +144,12 @@ export class HudController {
     this.refs.settingsButton.classList.toggle("is-active", open);
   }
 
+  setDiagnosticsOpen(open) {
+    this.refs.diagnosticsDrawer.hidden = !open;
+    this.refs.diagnosticsButton.classList.toggle("is-active", open);
+    document.body.classList.toggle("diagnostics-open", open);
+  }
+
   update(snapshot, { mode, fps, health }) {
     const style = ZONE_STYLES[snapshot.zone] ?? ZONE_STYLES.CLEAR;
     const thresholds = snapshot.thresholds;
@@ -169,7 +172,7 @@ export class HudController {
     if (healthBlocksVision) {
       this.refs.zoneValue.textContent =
         health.state === "UNSAFE" ? "UNSAFE" : "RECOVER";
-      this.refs.heroDistance.textContent = "No live feed";
+      this.refs.heroDistance.textContent = "--";
       this.refs.threatDetail.textContent = health.message;
       this.refs.heroThresholds.textContent =
         "Do not rely on vehicle detection until recovery completes.";
@@ -186,8 +189,8 @@ export class HudController {
 
     this.refs.zoneValue.textContent = style.displayLabel;
     this.refs.heroDistance.textContent = snapshot.primary
-      ? `~ ${formatMeters(snapshot.primary.distanceMeters)}`
-      : "No target";
+      ? formatMeters(snapshot.primary.distanceMeters)
+      : "--";
     this.refs.threatDetail.textContent = buildThreatDetail(snapshot, mode);
     this.refs.heroThresholds.textContent =
       `Warning under ${formatMeters(thresholds.warningMeters)}. Danger under ${formatMeters(thresholds.dangerMeters)}.`;
@@ -200,19 +203,34 @@ export class HudController {
     this.refs.backendValue.textContent = snapshot.backend.toUpperCase();
     this.refs.statusMessage.textContent = buildStatusMessage(snapshot, mode, thresholds);
     this.refs.riskFill.style.transform = `scaleX(${Math.max(snapshot.risk, 0.03)})`;
+
+    const calibrationSource = snapshot.primary?.calibrationSource;
+    this.refs.diagnosticsFov.textContent =
+      calibrationSource === "tuned" ? "FOV tuned" : "FOV estimated";
   }
 
   updateHealth(health) {
-    const isReady = health.state === "READY";
+    const visibleIssues = health.issues.filter(
+      (issue) => issue.code !== "calibration.fov",
+    );
+    const calibrationIssue = health.issues.find(
+      (issue) => issue.code === "calibration.fov",
+    );
+    const isReady = visibleIssues.length === 0;
+
+    if (calibrationIssue) {
+      this.refs.diagnosticsFov.textContent = calibrationIssue.title;
+    }
+
     this.refs.healthBanner.hidden = isReady;
 
     if (isReady) {
       return;
     }
 
-    const primary = health.issues[0];
-    this.refs.healthBanner.dataset.healthState = health.state;
-    this.refs.healthState.textContent = primary?.title || health.state;
-    this.refs.healthDetail.textContent = health.message;
+    const primary = visibleIssues[0];
+    this.refs.healthBanner.dataset.healthState = primary.state;
+    this.refs.healthState.textContent = primary.title || primary.state;
+    this.refs.healthDetail.textContent = primary.detail || health.message;
   }
 }

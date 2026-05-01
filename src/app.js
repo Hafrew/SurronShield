@@ -34,6 +34,8 @@ class SurronShieldApp {
     this.frontModeButton = document.getElementById("front-mode-button");
     this.rearModeButton = document.getElementById("rear-mode-button");
     this.settingsButton = document.getElementById("settings-button");
+    this.diagnosticsButton = document.getElementById("diagnostics-button");
+    this.diagnosticsCloseButton = document.getElementById("diagnostics-close-button");
     this.soundButton = document.getElementById("sound-button");
     this.hapticsButton = document.getElementById("haptics-button");
 
@@ -68,6 +70,7 @@ class SurronShieldApp {
     this.running = false;
     this.switching = false;
     this.settingsOpen = false;
+    this.diagnosticsOpen = false;
     this.fpsFrames = 0;
     this.fpsLastAt = performance.now();
     this.fps = 0;
@@ -106,6 +109,13 @@ class SurronShieldApp {
       this.setSettingsOpen(true);
     });
 
+    this.diagnosticsButton.addEventListener("click", () => {
+      this.setDiagnosticsOpen(!this.diagnosticsOpen);
+    });
+    this.diagnosticsCloseButton.addEventListener("click", () => {
+      this.setDiagnosticsOpen(false);
+    });
+
     this.settingsPanel.bind({
       onClose: () => this.setSettingsOpen(false),
       onThresholdChange: (mode, key, value) => {
@@ -141,6 +151,8 @@ class SurronShieldApp {
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape" && this.settingsOpen) {
         this.setSettingsOpen(false);
+      } else if (event.key === "Escape" && this.diagnosticsOpen) {
+        this.setDiagnosticsOpen(false);
       }
     });
 
@@ -193,6 +205,11 @@ class SurronShieldApp {
     } else {
       this.health.clear("settings.save");
     }
+  }
+
+  setDiagnosticsOpen(open) {
+    this.diagnosticsOpen = open;
+    this.ui.setDiagnosticsOpen(open);
   }
 
   reportSettingsError(settingsError) {
@@ -552,6 +569,7 @@ class SurronShieldApp {
       });
     }
     this.ui.setSettingsOpen(false);
+    this.ui.setDiagnosticsOpen(false);
     this.ui.updateHealth(this.healthSnapshot);
 
     this.ui.setLoading(18, "Preparing detector...");
