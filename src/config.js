@@ -68,6 +68,11 @@ export const INFERENCE = {
 export const TRACKING = {
   smoothingAlpha: 0.58,
   trackIouThreshold: 0.2,
+  minAssociationScore: 0.34,
+  centerDistanceGate: 1.45,
+  sizeRatioGate: 0.38,
+  velocitySmoothingAlpha: 0.38,
+  predictionMaxDtSeconds: 0.7,
   trackTtlMs: 480,
   holdTtlMs: 220,
   retainedScoreDecay: 0.985,
@@ -77,8 +82,27 @@ export const TRACKING = {
 
 export const DISTANCE_ESTIMATION = {
   horizontalFovDegreesDefault: 67,
+  horizontalFovDegreesMin: 50,
+  horizontalFovDegreesMax: 90,
+  calibratedConfidence: 0.86,
+  estimatedConfidence: 0.62,
   minDistanceMeters: 1,
   maxDistanceMeters: 60,
+};
+
+export const RANGE_FILTER = {
+  distanceAlphaMin: 0.18,
+  distanceAlphaMax: 0.68,
+  distanceResidualScale: 0.035,
+  velocityAlpha: 0.24,
+  uncertaintyAlpha: 0.28,
+  calibratedUncertaintyRatio: 0.08,
+  estimatedUncertaintyRatio: 0.16,
+  residualUncertaintyWeight: 0.35,
+  dangerExitMarginMeters: 1.2,
+  warningExitMarginMeters: 2.0,
+  downgradeHoldMs: 650,
+  conservativeUncertaintyWeight: 0.45,
 };
 
 export const FALLBACK_RISK_PROFILES = {

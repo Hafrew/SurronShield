@@ -291,6 +291,7 @@ body[data-zone="close"] .glow-layer {
 
 .topbar,
 .action-rail,
+.health-banner,
 .hud,
 .telemetry-panel,
 .status-message {
@@ -451,6 +452,52 @@ body[data-zone="close"] .glow-layer {
   background: linear-gradient(135deg, rgba(49, 193, 255, 0.22), rgba(94, 242, 196, 0.18));
   color: var(--text);
   box-shadow: inset 0 0 0 1px rgba(94, 242, 196, 0.18);
+}
+
+.health-banner {
+  top: calc(var(--safe-area-top) + 138px);
+  right: 12px;
+  width: min(46vw, 360px);
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 190, 98, 0.34);
+  background: rgba(18, 14, 8, 0.82);
+  color: #ffdfaa;
+  font-family: "Share Tech Mono", monospace;
+  text-transform: uppercase;
+  pointer-events: none;
+  backdrop-filter: blur(14px);
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+}
+
+.health-banner[hidden] {
+  display: none;
+}
+
+.health-banner strong {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+}
+
+.health-banner span {
+  color: rgba(255, 238, 214, 0.82);
+  font-size: 10px;
+  line-height: 1.35;
+  letter-spacing: 0.08em;
+}
+
+.health-banner[data-health-state="RECOVERING"] {
+  border-color: rgba(49, 193, 255, 0.34);
+  background: rgba(5, 21, 28, 0.84);
+  color: #9fe5ff;
+}
+
+.health-banner[data-health-state="UNSAFE"] {
+  border-color: rgba(255, 107, 143, 0.46);
+  background: rgba(32, 8, 16, 0.86);
+  color: #ff9cb0;
 }
 
 .hud {
@@ -721,6 +768,7 @@ body.rear-mode .hero-card {
 
 body.settings-open .topbar,
 body.settings-open .action-rail,
+body.settings-open .health-banner,
 body.settings-open .hud,
 body.settings-open .telemetry-panel,
 body.settings-open .status-message {
@@ -752,6 +800,14 @@ body.settings-open .status-message {
 
   .hud {
     width: min(88vw, 340px);
+  }
+
+  .health-banner {
+    top: auto;
+    right: 12px;
+    bottom: calc(var(--safe-area-bottom) + 210px);
+    width: auto;
+    left: 12px;
   }
 
   .telemetry-panel {

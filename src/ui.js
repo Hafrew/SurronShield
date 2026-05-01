@@ -1,5 +1,7 @@
 import { CAMERA_MODES, ZONE_STYLES } from "./config.js";
 
+const BLOCKING_HEALTH_STATES = new Set(["RECOVERING", "UNSAFE"]);
+
 function formatMeters(value) {
   if (!Number.isFinite(value)) {
     return "--";
@@ -31,8 +33,10 @@ function buildThreatDetail(snapshot, mode) {
   const direction = CAMERA_MODES[mode].directionLabel;
   const meters = formatMeters(snapshot.primary.distanceMeters);
   const carLengths = formatCarLengths(snapshot.primary.distanceCarLengths);
+  const rangeSource =
+    snapshot.primary.calibrationSource === "tuned" ? "tuned range" : "estimated range";
 
-  return `${subject} ${direction} at about ${meters} (${carLengths}).`;
+  return `${subject} ${direction} at about ${meters} (${carLengths}, ${rangeSource}).`;
 }
 
 function buildStatusMessage(snapshot, mode, thresholds) {
@@ -52,6 +56,12 @@ export class HudController {
       loadBar: document.getElementById("load-bar"),
       loadStatus: document.getElementById("load-status"),
       permissionError: document.getElementById("permission-error"),
+      errorEyebrow: document.getElementById("error-eyebrow"),
+      errorTitle: document.getElementById("error-title"),
+      errorMessage: document.getElementById("error-message"),
+      healthBanner: document.getElementById("health-banner"),
+      healthState: document.getElementById("health-state"),
+      healthDetail: document.getElementById("health-detail"),
       cameraModeLabel: document.getElementById("camera-mode-label"),
       backendValue: document.getElementById("backend-value"),
       frontModeButton: document.getElementById("front-mode-button"),
@@ -91,7 +101,19 @@ export class HudController {
   }
 
   showPermissionError() {
+    this.showFatalError({
+      eyebrow: "Camera access required",
+      title: "Point the phone toward traffic and allow camera access.",
+      message:
+        "SurronShield needs the camera to watch for cars, trucks, buses, motorcycles, and bicycles around your bike.",
+    });
+  }
+
+  showFatalError({ eyebrow, title, message }) {
     this.refs.loading.hidden = true;
+    this.refs.errorEyebrow.textContent = eyebrow;
+    this.refs.errorTitle.textContent = title;
+    this.refs.errorMessage.textContent = message;
     this.refs.permissionError.hidden = false;
   }
 
@@ -125,12 +147,42 @@ export class HudController {
     this.refs.settingsButton.classList.toggle("is-active", open);
   }
 
-  update(snapshot, { mode, fps }) {
+  update(snapshot, { mode, fps, health }) {
     const style = ZONE_STYLES[snapshot.zone] ?? ZONE_STYLES.CLEAR;
     const thresholds = snapshot.thresholds;
+    const healthBlocksVision = health && BLOCKING_HEALTH_STATES.has(health.state);
 
-    document.body.dataset.zone = snapshot.zone.toLowerCase();
-    document.documentElement.style.setProperty("--zone-color", style.color);
+    document.body.dataset.zone = healthBlocksVision
+      ? health.state === "UNSAFE"
+        ? "close"
+        : "medium"
+      : snapshot.zone.toLowerCase();
+    document.documentElement.style.setProperty(
+      "--zone-color",
+      healthBlocksVision
+        ? health.state === "UNSAFE"
+          ? ZONE_STYLES.CLOSE.color
+          : ZONE_STYLES.MEDIUM.color
+        : style.color,
+    );
+
+    if (healthBlocksVision) {
+      this.refs.zoneValue.textContent =
+        health.state === "UNSAFE" ? "UNSAFE" : "RECOVER";
+      this.refs.heroDistance.textContent = "No live feed";
+      this.refs.threatDetail.textContent = health.message;
+      this.refs.heroThresholds.textContent =
+        "Do not rely on vehicle detection until recovery completes.";
+      this.refs.distanceValue.textContent = "--";
+      this.refs.vehicleCount.textContent = "--";
+      this.refs.fpsValue.textContent = fps > 0 ? String(fps) : "--";
+      this.refs.latencyValue.textContent = "--";
+      this.refs.backendValue.textContent = snapshot.backend.toUpperCase();
+      this.refs.statusMessage.textContent = health.message;
+      this.refs.riskFill.style.transform =
+        health.state === "UNSAFE" ? "scaleX(1)" : "scaleX(0.62)";
+      return;
+    }
 
     this.refs.zoneValue.textContent = style.displayLabel;
     this.refs.heroDistance.textContent = snapshot.primary
@@ -148,5 +200,19 @@ export class HudController {
     this.refs.backendValue.textContent = snapshot.backend.toUpperCase();
     this.refs.statusMessage.textContent = buildStatusMessage(snapshot, mode, thresholds);
     this.refs.riskFill.style.transform = `scaleX(${Math.max(snapshot.risk, 0.03)})`;
+  }
+
+  updateHealth(health) {
+    const isReady = health.state === "READY";
+    this.refs.healthBanner.hidden = isReady;
+
+    if (isReady) {
+      return;
+    }
+
+    const primary = health.issues[0];
+    this.refs.healthBanner.dataset.healthState = health.state;
+    this.refs.healthState.textContent = primary?.title || health.state;
+    this.refs.healthDetail.textContent = health.message;
   }
 }

@@ -2,11 +2,22 @@ import { DISTANCE_ESTIMATION } from "./config.js";
 
 export const SETTINGS_STORAGE_KEY = "surronshield-settings-v2";
 
+let lastSettingsError = null;
+
 export const DEFAULT_SETTINGS = {
   activeMode: "front",
   calibration: {
     carLengthMeters: 4.5,
-    horizontalFovDegrees: DISTANCE_ESTIMATION.horizontalFovDegreesDefault,
+    cameraProfiles: {
+      front: {
+        horizontalFovDegrees: DISTANCE_ESTIMATION.horizontalFovDegreesDefault,
+        calibrated: false,
+      },
+      rear: {
+        horizontalFovDegrees: DISTANCE_ESTIMATION.horizontalFovDegreesDefault,
+        calibrated: false,
+      },
+    },
   },
   distanceTuning: {
     front: {
@@ -42,7 +53,29 @@ function normalizeThresholdPair(pair, fallback) {
   };
 }
 
+function normalizeCameraProfile(profile, fallback) {
+  return {
+    horizontalFovDegrees: clamp(
+      Number(profile?.horizontalFovDegrees ?? fallback.horizontalFovDegrees),
+      DISTANCE_ESTIMATION.horizontalFovDegreesMin,
+      DISTANCE_ESTIMATION.horizontalFovDegreesMax,
+    ),
+    calibrated: Boolean(profile?.calibrated),
+  };
+}
+
 export function normalizeSettings(input = {}) {
+  const legacyFov = Number(
+    input.calibration?.horizontalFovDegrees ??
+      DISTANCE_ESTIMATION.horizontalFovDegreesDefault,
+  );
+  const legacyFallback = {
+    horizontalFovDegrees: Number.isFinite(legacyFov)
+      ? legacyFov
+      : DISTANCE_ESTIMATION.horizontalFovDegreesDefault,
+    calibrated: false,
+  };
+
   return {
     activeMode: input.activeMode === "rear" ? "rear" : "front",
     calibration: {
@@ -51,14 +84,20 @@ export function normalizeSettings(input = {}) {
         3.5,
         5.5,
       ),
-      horizontalFovDegrees: clamp(
-        Number(
-          input.calibration?.horizontalFovDegrees ??
-            DEFAULT_SETTINGS.calibration.horizontalFovDegrees,
+      cameraProfiles: {
+        front: normalizeCameraProfile(
+          input.calibration?.cameraProfiles?.front,
+          input.calibration?.cameraProfiles
+            ? DEFAULT_SETTINGS.calibration.cameraProfiles.front
+            : legacyFallback,
         ),
-        50,
-        90,
-      ),
+        rear: normalizeCameraProfile(
+          input.calibration?.cameraProfiles?.rear,
+          input.calibration?.cameraProfiles
+            ? DEFAULT_SETTINGS.calibration.cameraProfiles.rear
+            : legacyFallback,
+        ),
+      },
     },
     distanceTuning: {
       front: normalizeThresholdPair(
@@ -82,7 +121,10 @@ export function loadSettings() {
 
     return normalizeSettings(JSON.parse(raw));
   } catch (error) {
-    console.warn("Failed to load settings", error);
+    lastSettingsError = {
+      type: "load",
+      error,
+    };
     return normalizeSettings(DEFAULT_SETTINGS);
   }
 }
@@ -93,9 +135,20 @@ export function saveSettings(settings) {
       SETTINGS_STORAGE_KEY,
       JSON.stringify(normalizeSettings(settings)),
     );
+    return { ok: true };
   } catch (error) {
-    console.warn("Failed to save settings", error);
+    lastSettingsError = {
+      type: "save",
+      error,
+    };
+    return { ok: false, error };
   }
+}
+
+export function takeSettingsError() {
+  const error = lastSettingsError;
+  lastSettingsError = null;
+  return error;
 }
 
 export function updateDistanceSetting(settings, mode, key, value) {
@@ -119,6 +172,31 @@ export function updateCalibrationSetting(settings, key, value) {
       [key]: Number(value),
     },
   });
+}
+
+export function updateCameraProfileSetting(settings, mode, key, value) {
+  const normalized = normalizeSettings(settings);
+  const nextMode = mode === "rear" ? "rear" : "front";
+
+  return normalizeSettings({
+    ...normalized,
+    calibration: {
+      ...normalized.calibration,
+      cameraProfiles: {
+        ...normalized.calibration.cameraProfiles,
+        [nextMode]: {
+          ...normalized.calibration.cameraProfiles[nextMode],
+          [key]: Number(value),
+          calibrated: true,
+        },
+      },
+    },
+  });
+}
+
+export function getModeCameraProfile(settings, mode) {
+  const normalized = normalizeSettings(settings);
+  return normalized.calibration.cameraProfiles[mode === "rear" ? "rear" : "front"];
 }
 
 export function metersToCarLengths(meters, settings) {

@@ -34,9 +34,9 @@
 
   <div id="permission-error" class="screen screen--error" hidden>
     <div class="error-card">
-      <p class="error-card__eyebrow">Camera access required</p>
-      <h2>Point the phone toward traffic and allow camera access.</h2>
-      <p>
+      <p class="error-card__eyebrow" id="error-eyebrow">Camera access required</p>
+      <h2 id="error-title">Point the phone toward traffic and allow camera access.</h2>
+      <p id="error-message">
         SurronShield needs the camera to watch for cars, trucks, buses, motorcycles,
         and bicycles around your bike.
       </p>
@@ -81,6 +81,11 @@
       <span class="action-chip__label">Haptics</span>
       <strong class="action-chip__value" id="haptics-button-value">On</strong>
     </button>
+  </section>
+
+  <section class="health-banner" id="health-banner" hidden aria-live="polite">
+    <strong id="health-state">System degraded</strong>
+    <span id="health-detail">Safety system degraded.</span>
   </section>
 
   <main class="hud">
@@ -214,9 +219,22 @@
         </div>
         <input id="car-length-slider" type="range" min="3.5" max="5.5" step="0.1" />
       </label>
+      <label class="settings-control" for="front-fov-slider">
+        <div class="settings-control__row">
+          <span>Front camera FOV</span>
+          <strong id="front-fov-display">--</strong>
+        </div>
+        <input id="front-fov-slider" type="range" min="50" max="90" step="1" />
+      </label>
+      <label class="settings-control" for="rear-fov-slider">
+        <div class="settings-control__row">
+          <span>Rear camera FOV</span>
+          <strong id="rear-fov-display">--</strong>
+        </div>
+        <input id="rear-fov-slider" type="range" min="50" max="90" step="1" />
+      </label>
       <p class="settings-hint">
-        These distances are approximate. SurronShield estimates range from the phone camera
-        and the size of the detected vehicle box.
+        Tuned FOV improves range estimates. Untuned cameras use wider safety margins.
       </p>
     </section>
   </section>

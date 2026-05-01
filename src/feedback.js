@@ -1,7 +1,8 @@
 import { AUDIO_PROFILES, FEEDBACK_INTERVALS, HAPTIC_PATTERNS } from "./config.js";
 
 export class FeedbackController {
-  constructor() {
+  constructor({ onStatus } = {}) {
+    this.onStatus = onStatus;
     this.audioCtx = null;
     this.soundEnabled = true;
     this.hapticsEnabled = typeof navigator.vibrate === "function";
@@ -9,20 +10,39 @@ export class FeedbackController {
     this.lastZone = "CLEAR";
     this.lastAlertAt = 0;
     this.lastHapticAt = 0;
+    this.lastStatusKey = "";
   }
 
   async prime() {
     if (!window.AudioContext && !window.webkitAudioContext) {
-      return;
+      this.emitStatus(
+        "audio-unsupported",
+        "degraded",
+        "Audio alerts are not supported in this browser.",
+      );
+      return false;
     }
 
-    if (!this.audioCtx) {
-      const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
-      this.audioCtx = new AudioContextCtor();
-    }
+    try {
+      if (!this.audioCtx) {
+        const AudioContextCtor = window.AudioContext || window.webkitAudioContext;
+        this.audioCtx = new AudioContextCtor();
+      }
 
-    if (this.audioCtx.state === "suspended") {
-      await this.audioCtx.resume().catch(() => {});
+      if (this.audioCtx.state === "suspended") {
+        await this.audioCtx.resume();
+      }
+
+      this.emitStatus("audio-ready", "ready", "Audio alerts ready.");
+      return true;
+    } catch (error) {
+      this.emitStatus(
+        "audio-failed",
+        "degraded",
+        "Audio alerts could not be started.",
+        error,
+      );
+      return false;
     }
   }
 
@@ -69,22 +89,38 @@ export class FeedbackController {
   playTone(zone) {
     const profile = AUDIO_PROFILES[zone];
     if (!profile || !this.audioCtx) {
+      if (this.soundEnabled) {
+        this.emitStatus(
+          "audio-not-ready",
+          "degraded",
+          "Audio alerts are not primed yet.",
+        );
+      }
       return;
     }
 
-    const oscillator = this.audioCtx.createOscillator();
-    const gain = this.audioCtx.createGain();
+    try {
+      const oscillator = this.audioCtx.createOscillator();
+      const gain = this.audioCtx.createGain();
 
-    oscillator.type = profile.type;
-    oscillator.frequency.value = profile.frequency;
-    gain.gain.setValueAtTime(profile.gain, this.audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + profile.duration);
+      oscillator.type = profile.type;
+      oscillator.frequency.value = profile.frequency;
+      gain.gain.setValueAtTime(profile.gain, this.audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + profile.duration);
 
-    oscillator.connect(gain);
-    gain.connect(this.audioCtx.destination);
+      oscillator.connect(gain);
+      gain.connect(this.audioCtx.destination);
 
-    oscillator.start();
-    oscillator.stop(this.audioCtx.currentTime + profile.duration);
+      oscillator.start();
+      oscillator.stop(this.audioCtx.currentTime + profile.duration);
+    } catch (error) {
+      this.emitStatus(
+        "audio-failed",
+        "degraded",
+        "Audio alert playback failed.",
+        error,
+      );
+    }
   }
 
   vibrate(zone, now) {
@@ -94,5 +130,21 @@ export class FeedbackController {
 
     navigator.vibrate(HAPTIC_PATTERNS[zone] ?? HAPTIC_PATTERNS.FAR);
     this.lastHapticAt = now;
+  }
+
+  emitStatus(code, state, message, error = null) {
+    const key = `${code}|${state}|${message}|${error?.message || error?.name || ""}`;
+    if (key === this.lastStatusKey) {
+      return;
+    }
+
+    this.lastStatusKey = key;
+    this.onStatus?.({
+      code,
+      state,
+      message,
+      error,
+      updatedAt: performance.now(),
+    });
   }
 }
