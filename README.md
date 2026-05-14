@@ -1,6 +1,6 @@
-# SurronShield
+# BikSAFE
 
-SurronShield is a phone-first traffic awareness web app for bikes and handlebars. It uses the phone camera plus TensorFlow.js object detection to watch for nearby vehicles and show simple danger, warning, and safe states for traffic in front of or behind the rider.
+BikSAFE is a phone-first traffic awareness web app for bikes and handlebars. It uses the phone camera plus TensorFlow.js object detection to watch for nearby vehicles and show simple danger, warning, and safe states for traffic in front of or behind the rider.
 
 ## What it does
 

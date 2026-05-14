@@ -102,7 +102,7 @@ export class HudController {
       eyebrow: "Camera access required",
       title: "Point the phone toward traffic and allow camera access.",
       message:
-        "SurronShield needs the camera to watch for cars, trucks, buses, motorcycles, and bicycles around your bike.",
+        "BikSAFE needs the camera to watch for cars, trucks, buses, motorcycles, and bicycles around your bike.",
     });
   }
 

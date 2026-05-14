@@ -9,6 +9,7 @@
   --zone-color: #5ef2c4;
   --safe-area-top: env(safe-area-inset-top, 0px);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --alert-notification-reserve: 92px;
 }
 
 * {
@@ -510,25 +511,36 @@ body[data-zone="close"] .glow-layer {
 }
 
 .hud {
-  left: 8px;
-  right: 8px;
-  bottom: calc(var(--safe-area-bottom) + 10px);
+  left: clamp(10px, 3vw, 24px);
+  right: clamp(10px, 3vw, 24px);
+  bottom: calc(var(--safe-area-bottom) + var(--alert-notification-reserve));
   width: auto;
   pointer-events: none;
 }
 
 .bottom-hud {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  min-height: 48px;
-  padding: 9px 12px;
-  border-radius: 18px;
-  border: 1px solid rgba(239, 247, 245, 0.12);
-  background: rgba(5, 12, 16, 0.58);
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "zone distance"
+    "detail detail";
+  align-items: end;
+  gap: 8px 14px;
+  width: min(720px, 100%);
+  min-height: 110px;
+  max-height: calc(100dvh - var(--safe-area-top) - var(--safe-area-bottom) - 190px);
+  margin: 0 auto;
+  padding: 16px 18px 15px;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(239, 247, 245, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 58%),
+    rgba(5, 12, 16, 0.72);
   backdrop-filter: blur(18px) saturate(1.25);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.28);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 18px 48px rgba(0, 0, 0, 0.34);
   pointer-events: none;
 }
 
@@ -541,27 +553,33 @@ body[data-zone="close"] .glow-layer {
 }
 
 .bottom-hud__zone {
+  grid-area: zone;
+  min-width: 0;
   color: var(--zone-color);
   font-family: "Share Tech Mono", monospace;
-  font-size: 12px;
-  letter-spacing: 0.08em;
+  font-size: clamp(42px, 10vw, 88px);
+  line-height: 0.82;
+  letter-spacing: 0;
   text-transform: uppercase;
+  overflow: hidden;
+  text-shadow: 0 0 24px color-mix(in srgb, var(--zone-color) 34%, transparent);
 }
 
 .bottom-hud__zone::before {
-  content: "[";
+  content: "";
 }
 
 .bottom-hud__zone::after {
-  content: "]";
+  content: "";
 }
 
 .bottom-hud__detail {
+  grid-area: detail;
   min-width: 0;
   overflow: hidden;
   color: rgba(239, 247, 245, 0.92);
-  font-size: 15px;
-  line-height: 1;
+  font-size: clamp(17px, 3.4vw, 24px);
+  line-height: 1.08;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -572,9 +590,11 @@ body[data-zone="close"] .glow-layer {
 }
 
 .bottom-hud__distance {
+  grid-area: distance;
   color: rgba(239, 247, 245, 0.95);
   font-family: "Share Tech Mono", monospace;
-  font-size: 14px;
+  font-size: clamp(18px, 4.5vw, 28px);
+  line-height: 1;
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
@@ -618,7 +638,7 @@ body[data-zone="close"] .glow-layer {
 .diagnostics-drawer {
   left: 8px;
   right: 8px;
-  bottom: calc(var(--safe-area-bottom) + 66px);
+  bottom: calc(var(--safe-area-bottom) + var(--alert-notification-reserve) + 132px);
   padding: 10px;
   border-radius: 18px;
   border: 1px solid var(--panel-border);
@@ -877,7 +897,7 @@ body.settings-open .status-message {
   .health-banner {
     top: auto;
     right: 8px;
-    bottom: calc(var(--safe-area-bottom) + 122px);
+    bottom: calc(var(--safe-area-bottom) + var(--alert-notification-reserve) + 132px);
     width: auto;
     left: 8px;
   }
@@ -891,7 +911,7 @@ body.settings-open .status-message {
   }
 
   .bottom-hud {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .settings-summary {
@@ -932,20 +952,20 @@ body.settings-open .status-message {
   }
 
   .bottom-hud {
-    min-height: 44px;
-    padding: 8px 10px;
-    gap: 6px;
+    min-height: 98px;
+    padding: 14px 14px 13px;
+    gap: 7px 10px;
   }
 
   .bottom-hud__zone {
-    font-size: 11px;
+    font-size: clamp(38px, 13vw, 56px);
   }
 
   .bottom-hud__detail {
-    font-size: 14px;
+    font-size: 16px;
   }
 
   .bottom-hud__distance {
-    font-size: 13px;
+    font-size: 18px;
   }
 }

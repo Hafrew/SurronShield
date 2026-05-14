@@ -1,6 +1,6 @@
-# SurronShield Safety Reliability Upgrade
+# BikSAFE Safety Reliability Upgrade
 
-This version turns SurronShield from a simple camera detection demo into a supervised riding-assist runtime. The core goal was to remove silent failure modes and make camera, detector, wake-lock, feedback, and calibration state explicit in the app.
+This version turns BikSAFE from a simple camera detection demo into a supervised riding-assist runtime. The core goal was to remove silent failure modes and make camera, detector, wake-lock, feedback, and calibration state explicit in the app.
 
 ## Reliability Runtime
 

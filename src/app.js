@@ -26,7 +26,7 @@ const DETECTOR_STALE_MS = 1600;
 const FIRST_INFERENCE_GRACE_MS = 2200;
 const MAX_CAMERA_RECOVERY_ATTEMPTS = 5;
 
-class SurronShieldApp {
+class BikSAFEApp {
   constructor() {
     this.video = document.getElementById("video");
     this.overlayCanvas = document.getElementById("overlay");
@@ -643,5 +643,5 @@ class SurronShieldApp {
   }
 }
 
-const app = new SurronShieldApp();
+const app = new BikSAFEApp();
 app.init();

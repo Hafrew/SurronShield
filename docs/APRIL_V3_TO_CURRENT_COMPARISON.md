@@ -1,4 +1,4 @@
-# SurronShield Current Version vs April V3
+# BikSAFE Current Version vs April V3
 
 This document compares the April V3 baseline with the current safety-upgrade version. The current version keeps the same mobile browser foundation, TensorFlow.js COCO-SSD model path, camera modes, distance display, bounding boxes, haptics, and audio feedback, while adding reliability supervision, recovery behavior, smoother range estimates, and stronger calibration controls.
 
